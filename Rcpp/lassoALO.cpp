@@ -21,12 +21,13 @@ vec lassoALO(const vec &beta, const mat &X, const vec &y) {
 
 //[[Rcpp::export]]
 vec elsnetALO(const vec &beta, const mat &X, const vec &y, const double &lambda, const double &alpha) {
-  double gamma = 1 / (1 + (1 - alpha) * lambda);
+  // double gamma = 1 / (1 + (1 - alpha) * lambda);
   vec yhat = X * beta;
   uvec E = find(abs(beta) >= 1e-8);
   mat XE = X.cols(E);
   mat I_EE = eye<mat>(E.n_elem, E.n_elem);
-  mat H = gamma * XE * inv_sympd(XE.t() * XE / X.n_rows + (1 - gamma) * I_EE) * XE.t();
+  // mat H = gamma * XE * inv_sympd(gamma * XE.t() * XE / X.n_rows + (1 - gamma) * I_EE) * XE.t();
+  mat H = XE * inv_sympd(XE.t() * XE / X.n_rows + (1 - alpha) * lambda * I_EE) * XE.t();
   vec y_alo = yhat + diagvec(H) % ((yhat - y)) / (X.n_rows - diagvec(H));
   
   return y_alo;
