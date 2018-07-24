@@ -261,6 +261,16 @@ which is a special case of the general LASSO.
 The \verb|glmnet| package scales the elastic net loss function by a factor of \(1/n\), so the ALO formulae must be adjusted accordingly, e.g. for the proximal case, we instead have: \[\tilde{\by}_j^{\setminus i}=\hat{\by}_j+\frac{\bH_{ii}(\hat{\by}_j-\by_j)}{n-\bH_{ii}},\qquad\bH=\gamma\bX_{\cdot,E}\left[\frac{\gamma}{n}\bX_{\cdot,E}^\top\bX_{\cdot,E}+\left(1-\gamma\right)\bI_{E,E}\right]^{-1}\bX_{\cdot,E}^\top.\]
 
 Furthermore, \verb|glmnet| implicitly ``standardizes \(y\) to have unit variance before computing its \(\lambda\) sequence (and then unstandardizes the resulting coefficients)'' (\emph{cf.} [\href{https://web.stanford.edu/~hastie/glmnet/glmnet_alpha.html}{Glmnet Vignette}]). So to get comparable results, it is necessary to rescale \(\by\) by the MLE \(\hat{\sigma}_y\) before fitting the model. \autoref{fig:elsnet} shows the comparison of the ALO and LOO for different \(\alpha\)s. Without standardizing \(\by\) first, a growing discrepancy between the two curves can be observed as \(\alpha\to0\).
+
+More precisely, \verb|glmnet| is in fact optimizing the following problem: 
+	\begin{equation}
+		\min_{\beta_0^\ast,\bm{\beta}^\ast}\frac{1}{2n}\sum_{j=1}^{n}\left(y_j^\ast-\beta_0^\ast-\bm{x}_j^T\bm{\beta}^\ast\right)^2+\lambda\alpha\|\bm{\beta}^\ast\|_1+\frac{1}{2}\lambda(1-\alpha)\|\bm{\beta}^\ast\|_2^2,
+	\end{equation}
+where \[\by^\ast=\frac{\by}{\hat{\sigma}_y},\qquad\beta_0^\ast=\frac{\beta_0}{\hat{\sigma}_y},\qquad\bbeta^\ast=\frac{\bbeta}{\hat{\sigma}_y}.\] As a result, to match the original elastic net problem, we may rescale \(\by\), \(\bX\), and \(\lambda\), to get:
+\begin{equation}
+	\min_{\beta_0,\bm{\beta}}\frac{1}{2n}\sum_{j=1}^{n}\left(y_j^\ast-\beta_0^\ast-\bm{x}_j^{\ast\top}\bm{\beta}\right)^2+\lambda^\ast\alpha\|\bm{\beta}\|_1+\frac{1}{2}\lambda^\ast(1-\alpha)\|\bm{\beta}\|_2^2,
+\end{equation} 
+where \[\bX^\ast=\frac{\bX}{\hat{\sigma}_y},\qquad\lambda=\frac{\lambda}{\hat{\sigma}_y^2}.\]
 	\begin{figure}[!htbp]
 	\centering
 	\begin{subfigure}[b]{\textwidth}
