@@ -1,0 +1,157 @@
+\documentclass[11pt]{article}
+\usepackage{fullpage,titling}
+\usepackage{mathtools,amssymb,amsthm}
+\usepackage{bm}
+\usepackage{tikz}
+\usepackage{hyperref}
+\usepackage{array}
+\usepackage{float}
+\usepackage{lstautogobble}
+\usepackage[T1]{fontenc}
+\usepackage{newpxtext,newpxmath}
+\usepackage[activate={true,nocompatibility},final,tracking=true, kerning=true, spacing=true, factor=1100, stretch=10, shrink=10]{microtype}
+\usepackage{amsmath}
+
+\newcommand{\bu}{\bm{u}}
+\newcommand{\bx}{\bm{x}}
+\newcommand{\by}{\bm{y}}
+\newcommand{\bz}{\bm{z}}
+\newcommand{\bA}{\bm{A}}
+\newcommand{\bD}{\bm{D}}
+\newcommand{\bH}{\bm{H}}
+\newcommand{\bI}{\bm{I}}
+\newcommand{\bJ}{\bm{J}}
+\newcommand{\bX}{\bm{X}}
+\newcommand{\bY}{\bm{Y}}
+\newcommand{\bbeta}{\bm{\beta}}
+\newcommand{\btheta}{\bm{\theta}}
+
+\newcommand{\bbr}{\mathbb{R}} 
+\newcommand{\bbq}{\mathbb{Q}}
+\newcommand{\bbn}{\mathbb{N}}
+
+\newcommand{\semicol}{\nobreak\mskip2mu\mathpunct{}\nonscript\mkern-\thinmuskip{;}\mskip6muplus1mu\relax}
+
+\DeclareMathOperator{\sign}{sgn}
+\DeclareMathOperator{\prox}{prox}
+\DeclareMathOperator{\diag}{diag}
+\DeclareMathOperator{\bprox}{\mathbf{prox}}
+\DeclareMathOperator*{\argmin}{arg\,min}
+
+\newcommand{\refthm}[2]{#1~#2}
+
+\title{Notes on Approximate Leave-One-Out for Elastic Net}
+\author{}
+
+
+\begin{document}
+\maketitle
+
+This part is to be put after section 4
+\section{ALO for Elastic Net, without Penalty on Intercept through Generalized LASSO}
+Elastic net problem (without penalty on intercept):
+
+\begin{align*}
+\begin{bmatrix}
+\hat{\bbeta}_0 \\
+\hat{\bbeta}
+\end{bmatrix} &= arg\,min\frac{1}{2} \left\|y - \bbeta_0 - X\bbeta\right\|_2^2 + \lambda_1 \|\bbeta\|_1 + \lambda_2 \|\bbeta\|_2^2 \\
+&= arg\,min\frac{1}{2} 
+\begin{bmatrix}
+\bbeta_0 \\
+\bbeta
+\end{bmatrix}^T \left(
+\begin{bmatrix}
+1 & X
+\end{bmatrix}^\top
+\begin{bmatrix}
+1 & X
+\end{bmatrix} + 
+\lambda_2 \, diag(0; \bm{1}_p)
+\right)
+\begin{bmatrix} 
+\bbeta_0 \\
+\bbeta
+\end{bmatrix} - y^T
+\begin{bmatrix}
+1 & X
+\end{bmatrix} 
+\begin{bmatrix}
+\bbeta_0 \\
+\bbeta
+\end{bmatrix}   + \lambda_1 \|\bbeta\|_1
+\\
+\end{align*}
+(Here with assumption that the size of $\bm{X}$ is $n \times p$) \par
+
+While the LASSO problem (also without penalty on intercept) is:
+
+\begin{align*}
+\begin{bmatrix}
+\hat{\bbeta}_0 \\
+\hat{\bbeta}
+\end{bmatrix} &= arg\,min\frac{1}{2} \left\|y - \bbeta_0 - X\bbeta\right\|_2^2 + \lambda_1 \|\bbeta\|_1 \\
+&= arg\,min\frac{1}{2} 
+\begin{bmatrix}
+\bbeta_0 \\
+\bbeta
+\end{bmatrix}^T 
+\begin{bmatrix}
+1 & X
+\end{bmatrix}^\top
+\begin{bmatrix}
+1 & X
+\end{bmatrix} 
+\begin{bmatrix} 
+\bbeta_0 \\
+\bbeta
+\end{bmatrix} - y^T
+\begin{bmatrix}
+1 & X
+\end{bmatrix} 
+\begin{bmatrix}
+\bbeta_0 \\
+\bbeta
+\end{bmatrix} +  \lambda_1 \|\bbeta\|_1
+\\
+\end{align*}
+Thus we can add some "observations" to the data and let
+$$y_2 = \begin{bmatrix}
+y \\
+\bm0_p
+\end{bmatrix},\qquad X_2 =
+\begin{bmatrix}
+X \\
+\sqrt{\lambda_2} \bm{I}_p
+\end{bmatrix} $$
+Then the elastic net becomes
+\begin{align*}
+\begin{bmatrix}
+\hat{\bbeta}_0 \\
+\hat{\bbeta}
+\end{bmatrix} &= arg\,min\frac{1}{2} \left\|y_2 - \bbeta_0
+\begin{bmatrix}
+\bm{1}_n \\
+\bm{0}_p
+\end{bmatrix} - X_2\bbeta\right\|_2^2 + \lambda_1 \|\bbeta\|_1  \\
+ &= arg\,min\frac{1}{2} \left\|
+ \begin{bmatrix}
+ y \\
+ \bm0_p
+ \end{bmatrix}
+  - 
+\begin{bmatrix}
+\bm{1}_n & X \\
+\bm{0}_p &\sqrt{\lambda_2} \bm{I}_p
+\end{bmatrix}  
+\begin{bmatrix}
+\bbeta_0 \\
+\bbeta
+\end{bmatrix} 
+\right \|_2^2 + \lambda_1 \|\bbeta\|_1  \\
+\end{align*}
+as a special case of general LASSO.
+
+
+
+\end{document}
