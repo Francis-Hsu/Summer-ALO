@@ -22,6 +22,7 @@ vec lassoALO(const vec &beta, const mat &X, const vec &y) {
 //[[Rcpp::export]]
 vec elsnetALO(const vec &beta, const mat &X, const vec &y, const double &lambda, const double &alpha) {
   // double gamma = 1 / (1 + (1 - alpha) * lambda);
+  // double sy = stddev(y, 1);
   vec yhat = X * beta;
   uvec E = find(abs(beta) >= 1e-8);
   mat XE = X.cols(E);
