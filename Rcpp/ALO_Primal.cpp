@@ -368,7 +368,7 @@ field<mat> CholeskyUpdate(mat X, mat L,
 field<mat> ElasticNetALO_CholUpdate(vec beta, double intercept, 
                                     mat X, vec y, 
                                     double lambda, double alpha, 
-                                    mat L_old, uvec idx_old) {
+                                    mat L_old, uvec idx_old, mat XtX) {
   // find out the dimension of X
   double n = X.n_rows;
   double p = X.n_cols;
@@ -388,19 +388,21 @@ field<mat> ElasticNetALO_CholUpdate(vec beta, double intercept,
   mat H(n, n, fill::zeros);
   uvec idx;
   mat L;
+  cout<<A.n_elem<<endl;
   if(!A.is_empty()) {
     mat X_active = X_full.cols(A);
     if (L_old.n_rows == 0) {
       L = chol(X_active.t() * X_active); // upper triangle matrix
       idx = A;
     } else {
-      field<mat> update = CholeskyUpdate(X_full.t() * X_full, L_old, idx_old, A);
+      field<mat> update = CholeskyUpdate(XtX, L_old, idx_old, A);
       L = update(0);
       idx = conv_to<uvec>::from(update(1));
     }
+    cout<<idx<<endl;
     mat L_t = L.t(); // take the transpose -> lower triangle matrix
     mat L_t_inv = inv(L_t);
-    mat AE = L_t_inv * X_full(idx, idx).t();
+    mat AE = L_t_inv * X_active.t();
     H = AE.t() * AE;
   }
   // compute the ALO prediction
