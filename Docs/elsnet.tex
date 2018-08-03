@@ -21,6 +21,7 @@
 \newcommand{\bH}{\bm{H}}
 \newcommand{\bI}{\bm{I}}
 \newcommand{\bJ}{\bm{J}}
+\newcommand{\bK}{\bm{K}}
 \newcommand{\bX}{\bm{X}}
 \newcommand{\bY}{\bm{Y}}
 \newcommand{\bbeta}{\bm{\beta}}
@@ -146,7 +147,7 @@ For the generalized LASSO:
 	\end{equation}
 the dual problem can be derived as:
 	\begin{equation}
-	\min\limits_{\bu}\frac{1}{2}\|\by-\btheta\|_{2}^{2},\qquad\theta\in \{\bX^{\top}\btheta = \bD^{\top}\bu, \|\bu\|_{\infty} \leq \lambda\}.
+	\min\limits_{\bu}\frac{1}{2}\|\by-\btheta\|_{2}^{2},\qquad\btheta\in \{\bX^{\top}\btheta = \bD^{\top}\bu, \|\bu\|_{\infty} \leq \lambda\}.
 	\end{equation}
 The dual problem could be written in a proximal approach, such that: \[\hat{\bu} = \bprox_{R}(\by),\qquad R(\bu) =\begin{dcases}
 0 & \btheta \in \{\bX^{\top}\btheta = \bD^{\top}\bu, \|\bu\|_{\infty} \leq \lambda\},\\
@@ -155,7 +156,7 @@ The dual problem could be written in a proximal approach, such that: \[\hat{\bu}
 	\begin{equation}
 	\by^{\setminus i} = \by_{i} - \frac{\hat{\bu}_{i}}{\bJ_{ii}}.
 	\end{equation}
-For the case of LASSO with an intercept, we could expand the $\bX$ with a column of ones in the first column, expand $\bbeta$ with another dimension and choose $\bD = [\bm{0}, \bI]$. Let \(E\coloneqq\{j:|\bX_{j}^{\top}\theta| = \lambda \}\) denote the active set. The Jacobian is locally given as the projection onto the orthogonal complement of the span of $\bX_{E}$ and the vector of ones. Further denote $\tilde{\bX}_{E} = [\textbf{1}, \bX_{E}]$, then the Jacobian is given as $\bI - \tilde{\bX_{E}}(\tilde{\bX}_{E}^{\top}\tilde{\bX}_{E})\tilde{\bX}_{E}^{\top}$.
+For the case of LASSO with an intercept, we could expand the $\bX$ with a column of ones in the first column, expand $\bbeta$ with another dimension and choose $\bD = [\bm{0}, \bI]$. Let \(E\coloneqq\{j:|\bX_{j}^{\top}\btheta| = \lambda \}\) denote the active set. The Jacobian is locally given as the projection onto the orthogonal complement of the span of $\bX_{E}$ and the vector of ones. Further denote $\tilde{\bX}_{E} = [\textbf{1}, \bX_{E}]$, then the Jacobian is given as $\bI - \tilde{\bX_{E}}(\tilde{\bX}_{E}^{\top}\tilde{\bX}_{E})\tilde{\bX}_{E}^{\top}$.
 
 \section{ALO for Elastic Net, without Penalty on Intercept through Generalized LASSO}
 Without penalty on intercept, the elastic net problem can be written as:
@@ -257,10 +258,40 @@ then the elastic net becomes
 	\end{equation}
 which is a special case of the general LASSO.
 
-\section{Usage of ALO formulae with \texttt{glmnet} package}
-The \verb|glmnet| package scales the elastic net loss function by a factor of \(1/n\), so the ALO formulae must be adjusted accordingly, e.g. for the proximal case, we instead have: \[\tilde{\by}_j^{\setminus i}=\hat{\by}_j+\frac{\bH_{ii}(\hat{\by}_j-\by_j)}{n-\bH_{ii}},\qquad\bH=\gamma\bX_{\cdot,E}\left[\frac{\gamma}{n}\bX_{\cdot,E}^\top\bX_{\cdot,E}+\left(1-\gamma\right)\bI_{E,E}\right]^{-1}\bX_{\cdot,E}^\top.\]
+\section{Generalized Loss function}
+\subsection{ALO for Logistic Regression, Approximation in the Primal Domain}
+For binomial logistic regression, the primal problem is: \[\min_{\bbeta}\sum_{j=1}^{n}\left[\ln\left(1+e^{\bx_j^\top\bbeta}\right)-y_j\bx_j^\top\bbeta\right]+\lambda\left(\alpha\|\bbeta\|_1+\frac{1-\alpha}{2}\|\bbeta\|_2^2\right).\] Let \(A\) be the active set, we have \[\dot{\ell}(\bx_j^\top\bbeta\semicol y_j)=\frac{e^{\bx_j^\top\bbeta}}{1+e^{\bx_j^\top\bbeta}}-y_j,\qquad\ddot{\ell}(\bx_j^\top\bbeta\semicol y_j)=\frac{e^{\bx_j^\top\bbeta}}{\left(1+e^{\bx_j^\top\bbeta}\right)^2},\qquad\nabla^2 R(\hat{\bbeta}_A)=(1-\alpha)\lambda\bI_{A,A}.\] Therefore, the ALO formula is \[\bx_i^\top\tilde{\bbeta}^{\setminus j}\approx\bx_i^\top\hat{\bbeta}+\frac{\bH_{ii}\left(1+e^{\bx_j^\top\hat{\bbeta}}\right)\left[e^{\bx_j^\top\hat{\bbeta}}-y_j\left(1+e^{\bx_j^\top\hat{\bbeta}}\right)\right]}{\left(1+e^{\bx_j^\top\hat{\bbeta}}\right)^2-\bH_{ii}e^{\bx_j^\top\hat{\bbeta}}},\] where \[\bH=\bX_{\cdot,A}\left[\bX_{\cdot,A}^\top\diag\left(\frac{e^{\bx_j^\top\hat{\bbeta}}}{1+2e^{\bx_j^\top\hat{\bbeta}}+e^{2\bx_j^\top\hat{\bbeta}}}\right)\bX_{\cdot,A}+(1-\alpha)\lambda\bI_{A,A}\right]^{-1}\bX_{\cdot,A}^\top.\] Adding in intercept terms is then straightforward.
 
-Furthermore, \verb|glmnet| implicitly ``standardizes \(y\) to have unit variance before computing its \(\lambda\) sequence (and then unstandardizes the resulting coefficients)'' (\emph{cf.} [\href{https://web.stanford.edu/~hastie/glmnet/glmnet_alpha.html}{Glmnet Vignette}]). So to get comparable results, it is necessary to rescale \(\by\) by the MLE \(\hat{\sigma}_y\) before fitting the model. \autoref{fig:elsnet} shows the comparison of the ALO and LOO for different \(\alpha\)s. Without standardizing \(\by\) first, a growing discrepancy between the two curves can be observed as \(\alpha\to0\).
+\subsection{ALO for Logistic Regression, Approximation in the Dual Domain}
+\subsubsection{ALO for Logistic Regression with Lasso penalty}
+First, let's rewrite the optimization problem with the loss functions separated for each observation, therefore the loss function goes: \[-\sum_{i=1}^n\left[y_{i}\bx_{i}^{\top}\bbeta+\ln\left(1+e^{\bx_{i}^{\top}\bbeta}\right)\right]+\lambda_{1}\|\bbeta\|_{1},\]
+where the individual loss function is $\ell(x_{i}^{\top}\bbeta ;y_{i}) = y_{i}x_{i}^{\top}\bbeta+\ln(1+e^{\bx_{i}^{\top}\bbeta})$ and the regularizer is $R(\bbeta) = \lambda_{1}\|\bbeta\|_{1}$, from which we could derive the dual optimal and the conjugate functions: \[\hat{\btheta} = y - \frac{e^{\bX\hat{\bbeta}}}{1+e^{\bX\hat{\bbeta}}},\qquad \ell^{*}(-\theta_{i};y_{i})=(y_{i}-\theta_{i})\ln\frac{y_{i}-\theta_{i}}{1-(y_{i}-\theta_{i})}-\ln\frac{1}{1-(y_{i}-\theta_{i})},\qquad R^{*}(\bbeta) =\begin{dcases}
+0 & \|\bbeta\|_{\infty} \leq \lambda_{1},\\
+\infty & \text{otherwise}.\\
+\end{dcases}\]
+
+From the results of the conjugate functions above, we could also obtain the derivatives of the loss functions and the Jacobian of the regularizer: \[\dot{\ell}^{*}(-\theta_{i};y_{i}) = \ln \frac{y_{i}-\theta_{i}}{1-(y_{i}-\theta_{i})},\qquad \ddot{\ell}^{*}(-\theta_{i};y_{i}) = \frac{1}{(y_{i}-\theta_{i})[1-(y_{i}-\theta_{i})]}\]
+
+Recall \refthm{Eqn.}{20} from the main paper, the quadratic surrogate of the dual problem is \[\min\limits_{\bu} \frac{1}{2}\sum_{i=1}^n\left(u_{i}-\frac{\hat{\theta}_{i}\ddot{\ell}^{*}(-\hat{\theta}_{i};y_{i})+\hat{y}_{i}}{\sqrt{\ddot{\ell}^{*}(-\hat{\theta}_{i};y_{i})}}\right)^{2}+R^{*}(X^{\top}Ku),\] where $\bK=\diag\sqrt{\ddot{\ell}^{*}(-\hat{\theta}_{i};y_{i})}$. Therefore the Jacobian at $\by_{u} =\hat{\theta}_{i}\ddot{\ell}^{*}(-\hat{\theta}_{i};y_{i})+\hat{\theta}_{i}/\sqrt{\ddot{\ell}^{*}(-\hat{\theta}_{i};y_{i})}$ could locally be treated as the projection onto the orthogonal complement of the polyhedron $\{\|\bX^{\top}K\bu\|_{\infty} \leq \lambda_{1}\}$, thus $\bJ = \bI - \bX_{u,E}(\bX_{u,E}^{\top}\bX_{u,E})^{-1}\bX_{u,E}$, where $\bX_{u,E}$ are the columns of $\bX_{u}=\bX^{\top}\bK$, such that the columns in the set $E = \{i:|\bX_{i}^{\top}\btheta| = \lambda_{1}\}$ are selected. Take everything to \refthm{Eqn.}{22}, $y^{/i} = \bK_{ii}(y_{u,i}-\bK_{ii}\hat{\theta}_{i}/\bJ_{ii})$, we could obtain the ALO for the $i$-th observation.
+
+\subsubsection{ALO for Logistic Regression with Elastic Net Penalty}
+The optimization problem for logistic regression with elastic net penalty is: \[-\sum_{i=1}^n\left[y_{i}x_{i}^{\top}\bbeta+\ln\left(1+e^{\bx_{i}^{\top}\bbeta}\right)\right]+\lambda_{1}\|\bbeta\|_{1}+\lambda_{2}\|\bbeta\|_{2}^{2}.\]
+The optimization problem is the same except the regularizer is changed, therefore the only thing different is the conjugate function of the regularizer, $R^{*}$ and the corresponding Jacobian, here $R(\bbeta) = \lambda_{1}\|\bbeta\|_{1}+\lambda_{2}\|\bbeta\|_{2}^{2}$: \[R^{*}(\bbeta) = \sum\limits_{|u_{i}| > \lambda_{1}} \frac{(\lambda_{1}-|u_{i}|)^{2}}{4\lambda_{2}}.\] The corresponding Jacobian is $\bJ = (\bI +\bX_{u,E}\bX_{u,E}^{\top}/2\lambda_{2})$, where $\bX_{u,E}$ are the columns of $\bX_{u}=\bX^{\top}\bK$, such that the columns in the set $E = \{i:|\bX_{i}^{\top}\btheta| = \lambda_{1}\}$ are selected. Take everything to \refthm{Eqn.}{22}, $y^{/i} = \bK_{ii}(y_{u,i}-\bK_{ii}\hat{\theta}_{i}/\bJ_{ii})$, we could obtain the ALO for the $i$-th observation.
+
+\subsection{ALO for Poisson Regression, Approximation in the Primal Domain}
+For Poisson regression, the primal problem is: \[\min_{\bbeta}\sum_{j=1}^{n}\left(e^{\bx_j^\top\bbeta}-y_j\bx_j^\top\bbeta\right)+\lambda\left(\alpha\|\bbeta\|_1+\frac{1-\alpha}{2}\|\bbeta\|_2^2\right).\] Let \(A\) be the active set, we have \[\dot{\ell}(\bx_j^\top\bbeta\semicol y_j)=e^{\bx_j^\top\bbeta}-y_j,\qquad\ddot{\ell}(\bx_j^\top\bbeta\semicol y_j)=e^{\bx_j^\top\bbeta},\qquad\nabla^2 R(\hat{\bbeta}_A)=(1-\alpha)\lambda\bI_{A,A}.\] Therefore, the ALO formula is \[\bx_i^\top\tilde{\bbeta}^{\setminus j}\approx\bx_i^\top\hat{\bbeta}+\frac{\bH_{ii}\left(e^{\bx_j^\top\hat{\bbeta}}-y_j\right)}{1-\bH_{ii}e^{\bx_j^\top\hat{\bbeta}}},\] where \[\bH=\bX_{\cdot,A}\left[\bX_{\cdot,A}^\top\diag\left(e^{\bx_j^\top\hat{\bbeta}}\right)\bX_{\cdot,A}+(1-\alpha)\lambda\bI_{A,A}\right]^{-1}\bX_{\cdot,A}^\top.\]
+
+\subsection{ALO for Poisson Regression, Approximation in the Dual Domain}
+\subsubsection{ALO for Poisson Regression with Lasso penalty}
+The optimization function for Poisson regression with lasso penalty is: \[\sum_{i=1}^n\left[-y_{i}\bx_{i}^{\top}\bbeta+e^{\bx_{i}^{\top}\bbeta}+\ln(y_{i}!)\right] + \lambda_{1}\|\bbeta\|_{1}\] The regularizer is the same as the logistic regression with the lasso penalty case, thus the Jacobian will also be the same, therefore we only have to focus on the loss function $\ell(x_{i}^{\top}\bbeta ; y_{i}) = -y_{i}x_{i}^{\top}\bbeta+e^{x_{i}^{\top}\bbeta}+\ln(y_{i}!)$. The optimal solution for the dual problem $\hat{\theta} = y - e^{\bX\hat{\bbeta}}$ and the conjugate of the loss function is $\ell^{*}(-\theta_{i};y_{i}) = (y_{i}-\theta_{i})\ln(y_{i}-\theta_{i})-(y_{i}-\theta_{i})$, the corresponding derivatives are therefore: \[\dot{\ell}^{*}(-\theta_{i};y_{i}) = \ln(y_{i}-\theta_{i}),\qquad\ddot{\ell}^{*}(-\theta_{i};y_{i}) = \frac{1}{y_{i}-\theta_{i}}.\] By plugging everything into \refthm{Eqn.}{22}, we obtain the ALO for Poisson regression with the lasso penalty.
+
+\subsubsection{ALO for Poisson Regression with Elastic Net Penalty}
+The loss function for Poisson regression with elastic net penalty is the same as that of Poisson regression with the lasso penalty and the regularizer of it is the same as that of logistic regression with elastic net penalty. Thus by plugging everything into \refthm{Eqn.}{22}, we could obtain the ALO for Poisson regression with elastic net penalty.
+
+\section{Usage of ALO formulae with \texttt{glmnet} package}
+The \verb|glmnet| package scales the elastic net loss function by a factor of \(1/n\), so the ALO formulae must be adjusted accordingly, e.g. for the proximal case, we instead have: \[\tilde{y}_j^{\setminus i}=\hat{y}_j+\frac{\bH_{ii}(\hat{y}_j-y_j)}{n-\bH_{ii}},\qquad\bH=\gamma\bX_{\cdot,E}\left[\frac{\gamma}{n}\bX_{\cdot,E}^\top\bX_{\cdot,E}+\left(1-\gamma\right)\bI_{E,E}\right]^{-1}\bX_{\cdot,E}^\top.\]
+
+Furthermore, for regression problems \verb|glmnet| implicitly ``standardizes \(y\) to have unit variance before computing its \(\lambda\) sequence (and then unstandardizes the resulting coefficients)'' (\emph{cf.} [\href{https://web.stanford.edu/~hastie/glmnet/glmnet_alpha.html}{Glmnet Vignette}]). So to get comparable results, it is necessary to rescale \(\by\) by the MLE \(\hat{\sigma}_y\) before fitting the model. \autoref{fig:elsnet} shows the comparison of the ALO and LOO for different \(\alpha\)s. Without standardizing \(\by\) first, a growing discrepancy between the two curves can be observed as \(\alpha\to0\).
 
 More precisely, \verb|glmnet| is in fact optimizing the following problem: 
 	\begin{equation}
