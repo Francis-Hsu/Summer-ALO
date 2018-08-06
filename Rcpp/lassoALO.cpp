@@ -12,11 +12,13 @@ vec lassoALO(const vec &beta, const mat &X, const vec &y) {
   vec theta = y - X * beta;
   uvec E = find(abs(beta) >= 1e-8);
   mat XE = X.cols(E);
+  mat R = chol(XE.t() * XE);
+  mat XER = solve(trimatl(R.t()), XE.t());
   mat I_n = eye<mat>(X.n_rows, X.n_rows);
-  mat J = I_n - XE * inv_sympd(XE.t() * XE) * XE.t();
-  vec y_alo = y - theta /  diagvec(J);
+  mat H = XER.t() * XER;
+  vec aloUpdate = theta / diagvec(I_n - H);
   
-  return y_alo;
+  return aloUpdate;
 }
 
 //[[Rcpp::export]]
@@ -61,12 +63,14 @@ mat multnetALO(const mat &B, const mat &X, const mat &Y, const double &lambda, c
   mat H;
   for(uword i = 0; i < B.n_cols; i++) {
     eXb = eXB.col(i);
-    lossSecDev = eXb % (eXBRowSum - eXb) / square(eXBRowSum);
+    // lossSecDev = eXb % (eXBRowSum - eXb) / square(eXBRowSum);
+    lossSecDev = eXb / square(1.0 + eXBRowSum);
     E = find(abs(B.col(i)) >= 1e-8);
     XE = X.cols(E);
     hessR = (1 - alpha) * lambda * eye<mat>(E.n_elem, E.n_elem);
     H = XE * inv_sympd(XE.t() * diagmat(lossSecDev) * XE / X.n_rows + hessR) * XE.t();
-    XB_alo.col(i) += diagvec(H) % (eXb / eXBRowSum - Y.col(i)) / (X.n_rows - diagvec(H) % lossSecDev);
+    // XB_alo.col(i) += diagvec(H) % (eXb / eXBRowSum - Y.col(i)) / (X.n_rows - diagvec(H) % lossSecDev);
+    XB_alo.col(i) += diagvec(H) % (eXb / (1.0 + eXBRowSum) - Y.col(i)) / (X.n_rows - diagvec(H) % lossSecDev);
   }
   
   return XB_alo;
