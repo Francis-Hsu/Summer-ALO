@@ -20,7 +20,7 @@ lassoALO_chol = function(X, y, glm_obj, tune_param) {
     setdiff(glm_active_idx[[i - 1]], glm_active_idx[[i]])
   })
 
-  alo_update = lassoALOChol(X, y, as.matrix(glm_beta), glm_active_idx, glm_add_idx, glm_rmv_idx)
+  alo_update = lassoALOChol(X, y, glm_beta, glm_active_idx, glm_add_idx, glm_rmv_idx)
   mse = colMeans(alo_update^2)
   
   return(mse)
@@ -31,18 +31,18 @@ lassoALO_vanilla = function(X, y, glm_obj) {
   glm_beta = glm_obj$beta
   
   Y_alo = foreach(i = 1:length(glm_lambda), .combine = cbind) %do% {
-    temp_lambda = glm_lambda[i]
+    # temp_lambda = glm_lambda[i]
     temp_beta = glm_beta[, i]
-    alo_pred = elnetALO(temp_beta, X, y, temp_lambda, 1)
+    alo_pred = lassoALO(temp_beta, X, y)
   }
   
-  return(colMeans(sweep(Y_alo, 1, y)^2))
+  return(colMeans(Y_alo^2))
 }
 
 # setup
-n = 4000
-p = 4000
-k = 600
+n = 10000
+p = 10000
+k = 1000
 true_beta = rnorm(p, 0, 1)
 true_beta[-(1:k)] = 0
 
@@ -65,7 +65,7 @@ ptm = proc.time()
 mse2 = lassoALO_chol(X, y, fit)
 proc.time() - ptm
 
-plot(mse1, type = "l", col = "orange")
-lines(mse2, type = "b")
+plot(mse1, type = "l", col = "orange", lwd = 2)
+lines(mse2, type = "b", col = 4, lwd = 1.5)
 
-benchmark(lassoALO_vanilla(X, y, fit), lassoALO_chol(X, y, fit), replications = 10)
+# benchmark(lassoALO_vanilla(X, y, fit), lassoALO_chol(X, y, fit), replications = 10)
