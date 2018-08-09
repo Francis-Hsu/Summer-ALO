@@ -66,7 +66,7 @@ mat cholDowndate(const mat &R, uvec drop) {
 //[[Rcpp::export]]
 mat lassoALOChol(const mat &X, const vec &y, const sp_mat &beta, 
                  const field<uvec> &activeList, const field<uvec> &addList, const field<uvec> &dropList) {
-  uvec currXIdx = activeList(0) - 1;
+  uvec currXIdx = activeList(0);
   mat aloUpdate(X.n_rows, beta.n_cols, fill::zeros); // matrix storing updates of y
   vec theta = y - X * beta.col(0);
   mat In = eye<mat>(X.n_rows, X.n_rows);
@@ -82,8 +82,8 @@ mat lassoALOChol(const mat &X, const vec &y, const sp_mat &beta,
   mat Q;
   for (uword i = 1; i < beta.n_cols; i++) {
     // checkUserInterrupt();
-    toAdd = addList(i - 1) - 1; // columns to add
-    toDrop = dropList(i - 1) - 1; // columns to drop
+    toAdd = addList(i - 1); // columns to add
+    toDrop = dropList(i - 1); // columns to drop
     
      //auto start2 = std::chrono::steady_clock::now();
     if(toDrop.n_elem > 0) {
@@ -119,7 +119,7 @@ mat lassoALOChol(const mat &X, const vec &y, const sp_mat &beta,
 //[[Rcpp::export]]
 mat lassoALOWoodbury(const mat &X, const vec &y, const sp_mat &beta, 
                  const field<uvec> &activeList, const field<uvec> &addList, const field<uvec> &dropList) {
-  uvec currXIdx = activeList(0) - 1;
+  uvec currXIdx = activeList(0);
   mat aloUpdate(X.n_rows, beta.n_cols, fill::zeros); // matrix storing updates of y
   vec theta = y - X * beta.col(0);
   mat In = eye<mat>(X.n_rows, X.n_rows);
@@ -140,50 +140,53 @@ mat lassoALOWoodbury(const mat &X, const vec &y, const sp_mat &beta,
   mat T11, T12, T22;
   for (uword i = 1; i < beta.n_cols; i++) {
     // checkUserInterrupt();
-    toAdd = addList(i - 1) - 1; // columns to add
-    toDrop = dropList(i - 1) - 1; // columns to drop
+    toAdd = addList(i - 1); // columns to add
+    toDrop = dropList(i - 1); // columns to drop
     
-    //auto start2 = std::chrono::steady_clock::now();
-    if(toDrop.n_elem > 0) {
-      XEcolIdx = regspace<uvec>(0, currXIdx.n_elem - 1);
-      dropIdx.set_size(toDrop.n_elem);
-      for(uword j = 0; j < toDrop.n_elem; j++) {
-        dropIdx(j) = conv_to<uword>::from(find(currXIdx == toDrop(j), 1, "first"));
-        currXIdx.shed_row(dropIdx(j));
-        XEcolIdx.shed_row(dropIdx(j));
+    if (currXIdx.n_elem > 0) {
+      // remove variables
+      if (toDrop.n_elem > 0) {
+        XEcolIdx = regspace<uvec>(0, currXIdx.n_elem - 1);
+        dropIdx.zeros(toDrop.n_elem);
+        for (uword j = 0; j < toDrop.n_elem; j++) {
+          dropIdx(j) = conv_to<uword>::from(find(currXIdx == toDrop(j), 1, "first"));
+        }
+        dropIdx = sort(dropIdx, "descend");
+        for (uword j = 0; j < toDrop.n_elem; j++) {
+          currXIdx.shed_row(dropIdx(j));
+          XEcolIdx.shed_row(dropIdx(j));
+        }
+        invPerm = join_cols(XEcolIdx, dropIdx);
+        invXTX = invXTX.submat(invPerm, invPerm);
+        XE = XE.cols(XEcolIdx);
+        T11 = invXTX.submat(0, 0, XEcolIdx.n_elem - 1, XEcolIdx.n_elem - 1);
+        T12 = invXTX.submat(0, XEcolIdx.n_elem, XEcolIdx.n_elem - 1, invXTX.n_cols - 1);
+        T22 = invXTX.submat(XEcolIdx.n_elem, XEcolIdx.n_elem, invXTX.n_rows - 1, invXTX.n_cols - 1);
+        invXTX = T11 - T12 * solve(T22, T12.t());
       }
-      invPerm = join_cols(XEcolIdx, dropIdx);
-      invXTX = invXTX.submat(invPerm, invPerm);
-      XE = X.cols(currXIdx);
-      T11 = invXTX.submat(0, 0, XEcolIdx.n_elem - 1, XEcolIdx.n_elem - 1);
-      T12 = invXTX.submat(0, XEcolIdx.n_elem, XEcolIdx.n_elem - 1, invXTX.n_cols - 1);
-      T22 = invXTX.submat(XEcolIdx.n_elem, XEcolIdx.n_elem, invXTX.n_rows - 1, invXTX.n_cols - 1);
-      invXTX = T11 - T12 * solve(T22, T12.t()); // use solve?
-      // invXTX = inv(XE.t() * XE);
+      // add variables
+      if (toAdd.n_elem > 0) {
+        currXIdx = join_cols(currXIdx, toAdd);
+        Ainv = invXTX;
+        B = XE.t() * X.cols(toAdd);
+        D = trans(X.cols(toAdd)) * X.cols(toAdd);
+        XE = X.cols(currXIdx);
+        
+        AinvB = Ainv * B;
+        E = inv(D - B.t() * invXTX * B);
+        AinvBE = AinvB * E;
+        invXTX.set_size(currXIdx.n_elem, currXIdx.n_elem);
+        invXTX.submat(0, 0, Ainv.n_rows - 1, Ainv.n_cols - 1) = Ainv + AinvBE * AinvB.t();
+        invXTX.submat(0, Ainv.n_cols, Ainv.n_rows - 1, currXIdx.n_elem - 1) = -AinvBE;
+        invXTX.submat(Ainv.n_rows, 0, currXIdx.n_elem - 1, Ainv.n_cols - 1) = -AinvBE.t();
+        invXTX.submat(Ainv.n_rows, Ainv.n_cols, currXIdx.n_elem - 1, currXIdx.n_elem - 1) = E;
+      }
+    } else {
+      currXIdx = toAdd;
+      XE = X.cols(toAdd);
+      invXTX = inv_sympd(XE.t() * XE);
     }
-    //auto end2 = std::chrono::steady_clock::now();
-    //Rcout << std::chrono::duration_cast<std::chrono::milliseconds>(end2 - start2).count() << "ms for Drop" << std::endl;
-    //auto start = std::chrono::steady_clock::now();
-    if(toAdd.n_elem > 0) {
-      currXIdx = join_cols(currXIdx, toAdd);
-      Ainv = invXTX;
-      B = XE.t() * X.cols(toAdd);
-      D = trans(X.cols(toAdd)) * X.cols(toAdd);
-      XE = X.cols(currXIdx);
-      
-      AinvB = Ainv * B;
-      E = inv(D - B.t() * invXTX * B);
-      AinvBE = AinvB * E;
-      
-      invXTX.set_size(currXIdx.n_elem, currXIdx.n_elem);
-      invXTX.submat(0, 0, Ainv.n_rows - 1, Ainv.n_cols - 1) = Ainv + AinvBE * AinvB.t();
-      invXTX.submat(0, Ainv.n_cols, Ainv.n_rows - 1, invXTX.n_cols - 1) = -AinvBE;
-      invXTX.submat(Ainv.n_rows, 0, invXTX.n_rows - 1, Ainv.n_cols - 1) = -AinvBE.t();
-      invXTX.submat(Ainv.n_rows, Ainv.n_cols, invXTX.n_rows - 1, invXTX.n_cols - 1) = E;
-    }
-    //auto end = std::chrono::steady_clock::now();
-    //Rcout << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms for Add" << std::endl;
-    // compute updates of y
+    
     theta = y - X * beta.col(i);
     J = XE * invXTX * XE.t();
     aloUpdate.col(i) = theta / diagvec(In - J);
