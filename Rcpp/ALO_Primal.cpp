@@ -25,6 +25,7 @@ vec ElasticNetALO(vec beta, double intercept,
   vec y_hat = X_full * beta_full;
   // find active set
   uvec A = find(beta_full != 0);
+  cout<<A.n_elem<<endl;
   // compute matrix H
   mat H(n, n, fill::zeros);
   if(!A.is_empty()) {
@@ -241,16 +242,11 @@ field<mat> CholeskyAdd(mat X, mat L,
     return out;
   }
   // update Cholesky decomposition
-  mat A11 = X(idx_old, idx_old);
-  mat A12 = X(idx_old, idx_add);
-  mat A22 = X(idx_add, idx_add);
-  mat S11 = L;
-  mat S12 = solve(L.t(), A12);
-  mat S22 = chol(A22 - S12.t() * S12);
+  mat S12 = solve(trimatl(L.t()), X(idx_old, idx_add));
   mat L_out(idx_new.n_elem, idx_new.n_elem, fill::zeros);
-  L_out.submat(span(0, S11.n_rows - 1), span(0, S11.n_cols - 1)) = S11;
-  L_out.submat(span(0, S12.n_rows - 1), span(S11.n_cols, L_out.n_cols - 1)) = S12;
-  L_out.submat(span(S11.n_rows, L_out.n_rows - 1), span(S11.n_cols, L_out.n_cols - 1)) = S22;
+  L_out.submat(span(0, L.n_rows - 1), span(0, L.n_cols - 1)) = L;
+  L_out.submat(span(0, L.n_rows - 1), span(L.n_cols, L_out.n_cols - 1)) = S12;
+  L_out.submat(span(L.n_rows, L_out.n_rows - 1), span(L.n_cols, L_out.n_cols - 1)) = chol(X(idx_add, idx_add) - S12.t() * S12);
   // find the output index for Cholesky decomposition
   uvec idx_out = idx_old;
   idx_out.resize(idx_new.n_elem);
@@ -399,10 +395,8 @@ field<mat> ElasticNetALO_CholUpdate(vec beta, double intercept,
       L = update(0);
       idx = conv_to<uvec>::from(update(1));
     }
-    cout<<idx<<endl;
-    mat L_t = L.t(); // take the transpose -> lower triangle matrix
-    mat L_t_inv = inv(L_t);
-    mat AE = L_t_inv * X_active.t();
+    // cout<<idx<<endl;
+    mat AE = solve(trimatl(L.t()), X_full.cols(idx).t());
     H = AE.t() * AE;
   }
   // compute the ALO prediction
@@ -415,7 +409,81 @@ field<mat> ElasticNetALO_CholUpdate(vec beta, double intercept,
   return out;
 }
 
+// [[Rcpp::export]]
+mat BlockInverse_Add(mat X, uvec idx_A, uvec idx_add, mat A_inv) {
+  // using block matrix inversion lemma to update the inverse of a matrix
+  // X - symmetric matrix
+  // idx_A - old index in X for A_inv
+  // idx_add - index in X that should be added to the updated inverse
+  // A_inv - the inverse of X[idx_old, idx_old]
+  
+  // if A_inv is empty, then return the inverse
+  if (idx_A.is_empty()) {
+    mat out = inv(X(idx_add, idx_add));
+    return(out);
+  }
+  
+  // compute matrix E
+  mat E = inv(X(idx_add, idx_add) - 
+    X(idx_add, idx_A) * A_inv * X(idx_A, idx_add));
+  
+  // compute matrix B * E
+  mat BE = X(idx_A, idx_add) * E;
+  
+  // compute the updated inverse matrix
+  uword size = idx_A.n_elem + idx_add.n_elem;
+  mat out(size, size);
+  out.submat(0, 0, idx_A.n_elem - 1, idx_A.n_elem - 1) = 
+    A_inv + A_inv * BE * X(idx_add, idx_A) * A_inv;
+  out.submat(0, idx_A.n_elem, idx_A.n_elem - 1, size - 1) = - A_inv * BE;
+  out.submat(idx_A.n_elem, 0, size - 1, idx_A.n_elem - 1) = - E * X(idx_add, idx_A) * A_inv;
+  out.submat(idx_A.n_elem, idx_A.n_elem, size - 1, size - 1) = E;
+  
+  // return value
+  return(out);
+}
 
+
+// [[Rcpp::export]]
+mat BlockInverse_Drop(mat F_inv, uword n_keep) {
+  // using block matrix inversion lemma to update the inverse of a matrix
+  // F_inv - the inverse of the full matrix, we only need the inverse of the first a few rows
+  // n_keep - number of rows & cols to keep
+  
+  // if the number of keeped is equal to the F_inv, then return the F_inv
+  if (n_keep == F_inv.n_rows) {
+    return(F_inv);
+  }
+  
+  // if keep 0
+  if (n_keep == 0) {
+    mat out;
+    return(out);
+  }
+  
+  // compute the updated matrix
+  mat out = F_inv.submat(0, 0, n_keep - 1, n_keep - 1) - 
+    F_inv.submat(0, n_keep, n_keep - 1, F_inv.n_cols - 1) * 
+    inv(F_inv.submat(n_keep, n_keep, F_inv.n_rows - 1, F_inv.n_cols - 1)) * 
+    F_inv.submat(n_keep, 0, F_inv.n_rows - 1, n_keep - 1);
+  
+  // return value
+  return(out);
+}
+
+
+// [[Rcpp::export]]
+vec BlockInverse_ALO(mat X, mat A_inv, vec y, vec beta, uvec E) {
+  // compute y_hat
+  vec y_hat = X * beta;
+  // compute H
+  mat H = X.cols(E) * A_inv * X.cols(E).t();
+  // compute ALO
+  vec y_alo = y_hat + H.diag() % (y_hat - y) / (1-H.diag());
+  return y_alo;
+}
+
+  
 // You can include R code blocks in C++ files processed with sourceCpp
 // (useful for testing and development). The R code will be automatically 
 // run after the compilation.
@@ -426,4 +494,13 @@ L = matrix(c(2, 0, 0, 6, 1, 0, -8, 5, 3), ncol = 3)
 temp_add = CholeskyAdd(t(L)%*%L, L[c(1,2),c(1,2)], c(0,1), c(1,2,0))
 temp_drop = CholeskyDrop(t(L)%*%L, L, c(0,1,2), c(0,1))
 temp_update = CholeskyUpdate(t(L)%*%L, L[c(1,2),c(1,2)], c(0,1), c(1))
+
+set.seed(1)
+mat = matrix(rnorm(16), ncol = 4)
+mat = t(mat) * mat;
+mat.inv = solve(mat)
+mat.12 = mat[1:2, 1:2]
+# mat.added = BlockInverse_Add(mat, (1:2)-1, (3:4)-1, solve(mat.12))
+mat.added = BlockInverse_Add(mat, numeric(0), 3, matrix(ncol=0,nrow=0))
+mat.dropped = BlockInverse_Drop(mat.added, 1)
 */
