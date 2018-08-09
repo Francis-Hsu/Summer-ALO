@@ -19,8 +19,7 @@ lassoALO_chol = function(X, y, glm_obj, tune_param) {
   glm_rmv_idx = lapply(2:M, function(i) {
     setdiff(glm_active_idx[[i - 1]], glm_active_idx[[i]])
   })
-
-  alo_update = lassoALOChol(X, y, glm_beta, glm_active_idx, glm_add_idx, glm_rmv_idx)
+  alo_update = lassoALOWoodbury(X, y, glm_beta, glm_active_idx, glm_add_idx, glm_rmv_idx)
   mse = colMeans(alo_update^2)
   
   return(mse)
@@ -40,9 +39,9 @@ lassoALO_vanilla = function(X, y, glm_obj) {
 }
 
 # setup
-n = 10000
-p = 10000
-k = 1000
+n = 1000
+p = 500
+k = 100
 true_beta = rnorm(p, 0, 1)
 true_beta[-(1:k)] = 0
 
@@ -66,6 +65,6 @@ mse2 = lassoALO_chol(X, y, fit)
 proc.time() - ptm
 
 plot(mse1, type = "l", col = "orange", lwd = 2)
-lines(mse2, type = "b", col = 4, lwd = 1.5)
+lines(mse2, type = "b", col = 4, lwd = 2)
 
-# benchmark(lassoALO_vanilla(X, y, fit), lassoALO_chol(X, y, fit), replications = 10)
+# benchmark(lassoALO_vanilla(X, y, fit), lassoALO_chol(X, y, fit), replications = 5)
