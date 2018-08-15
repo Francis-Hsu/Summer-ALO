@@ -14,24 +14,24 @@ vec lassoALO(const vec &beta, const mat &X, const vec &y) {
   mat XE = X.cols(E);
   mat R = chol(XE.t() * XE);
   mat XER = solve(trimatl(R.t()), XE.t());
-  mat I_n = eye<mat>(X.n_rows, X.n_rows);
-  mat H = XER.t() * XER;
-  vec aloUpdate = theta / diagvec(I_n - H);
+  vec H = sum(square(XER.t()), 1);
+  vec yAlo = y - theta / (1 - H);
   
-  return aloUpdate;
+  return yAlo;
 }
 
 //[[Rcpp::export]]
 vec elnetALO(const vec &beta, const mat &X, const vec &y, const double &lambda, const double &alpha) {
   // double sy = stddev(y, 1);
-  vec yhat = X * beta;
+  vec yHat = X * beta;
   uvec E = find(abs(beta) >= 1e-8);
   mat XE = X.cols(E);
   mat hessR = (1 - alpha) * lambda * eye<mat>(E.n_elem, E.n_elem);
-  mat H = XE * inv_sympd(XE.t() * XE / X.n_rows + hessR) * XE.t();
-  vec y_alo = yhat + diagvec(H) % (yhat - y) / (X.n_rows - diagvec(H));
+  mat F = inv_sympd(XE.t() * XE / X.n_rows + hessR);
+  vec H = sum((XE * F) % XE, 1);
+  vec yAlo = yHat + H % (yHat - y) / (X.n_rows - H);
   
-  return y_alo;
+  return yAlo;
 }
 
 //[[Rcpp::export]]
