@@ -1,125 +1,135 @@
+// -*- mode: C++; c-indent-level: 4; c-basic-offset: 4; indent-tabs-mode: nil; -*-
 #include <RcppArmadillo.h>
 #include <math.h>
 
 using namespace Rcpp;
-using namespace arma;
 
+//[[Rcpp::interfaces(r, cpp)]]
 //[[Rcpp::plugins(cpp11)]]
 //[[Rcpp::depends(RcppArmadillo)]]
 
 //[[Rcpp::export]]
-vec lassoALO(const vec &beta, const mat &X, const vec &y) {
-  vec theta = y - X * beta;
-  uvec E = find(abs(beta) >= 1e-8);
-  mat XE = X.cols(E);
-  mat R = chol(XE.t() * XE);
-  mat XER = solve(trimatl(R.t()), XE.t());
-  vec H = sum(square(XER.t()), 1);
-  vec yAlo = y - theta / (1 - H);
+arma::mat elnetALO(const arma::mat &XE, const arma::vec &yHat, const arma::mat &y, 
+                   const double &lambda, const double &alpha, const bool &intercept) {
+  arma::uword n = XE.n_rows; // # of samples
+  arma::uword p = XE.n_cols; // # of active variables
+  double sy = arma::as_scalar(arma::stddev(y, 1));
+  double lScale = sy * n;
   
-  return yAlo;
-}
-
-//[[Rcpp::export]]
-mat elnetALO(const mat &XE, const mat &yHat, const mat &y, const double &lambda, const double &alpha, const bool intercept) {
-  uword n = XE.n_rows; // # of samples
-  uword p = XE.n_cols; // # of active variables
+  arma::vec H;
+  if (alpha == 1) {
+    arma::mat R = chol(XE.t() * XE / lScale);
+    arma::mat XER = solve(trimatl(R.t()), XE.t());
+    H = sum(square(XER.t()), 1);
+  } else {
+    arma::mat hessR = (1 - alpha) * (lambda / std::pow(sy, 2)) * arma::eye<arma::mat>(p, p);
+    if (intercept) {
+      hessR(0, 0) = 0;
+    }
+    arma::mat F = inv_sympd(XE.t() * XE / lScale + hessR);
+    H = sum((XE * F) % XE, 1);
+  }
+  arma::mat yALO = yHat + H % (yHat - y) / (lScale - H);
   
-  mat hessR = (1 - alpha) * lambda * eye<mat>(p, p);
-  mat F = inv_sympd(XE.t() * XE / n + hessR);
-  vec H = sum((XE * F) % XE, 1);
-  mat yALO = yHat + H % (yHat - y) / (n - H);
-  
-  return yALO;
-}
-
-//[[Rcpp::export]]
-mat lognetALO(const mat &XE, const mat &yHat, const mat &y, const double &lambda, const double &alpha, const bool intercept) {
-  uword n = XE.n_rows; // # of samples
-  uword p = XE.n_cols; // # of active variables
-  
-  vec eXb = exp(yHat);
-  mat hessR = (1 - alpha) * lambda * eye<mat>(p, p);
-  mat F = inv_sympd(XE.t() * diagmat(eXb / square(1.0 + eXb)) * XE / n + hessR);
-  vec H = sum((XE * F) % XE, 1);
-  mat yALO = yHat + H % (eXb / (1.0 + eXb) - y) / (n - H % (eXb / square(1.0 + eXb)));
   
   return yALO;
 }
 
 //[[Rcpp::export]]
-mat fishnetALO(const mat &XE, const mat &yHat, const mat &y, const double &lambda, const double &alpha, const bool intercept) {
-  uword n = XE.n_rows; // # of samples
-  uword p = XE.n_cols; // # of active variables
+arma::mat lognetALO(const arma::mat &XE, const arma::vec &yHat, const arma::mat &y, 
+                    const double &lambda, const double &alpha, const bool &intercept) {
+  arma::uword n = XE.n_rows; // # of samples
+  arma::uword p = XE.n_cols; // # of active variables
   
-  vec eXb = exp(yHat);
-  mat hessR = (1 - alpha) * lambda * eye<mat>(p, p);
-  mat F = inv_sympd(XE.t() * diagmat(eXb) * XE / n + hessR);
-  vec H = sum((XE * F) % XE, 1);
-  mat yALO = yHat + H % (eXb - y) / (n - H % eXb);
+  arma::vec eXb = exp(yHat);
+  arma::mat hessR = (1 - alpha) * lambda * arma::eye<arma::mat>(p, p);
+  if (intercept) {
+    hessR(0, 0) = 0;
+  }
+  arma::mat F = inv_sympd(XE.t() * diagmat(eXb / square(1.0 + eXb)) * XE / n + hessR);
+  arma::vec H = sum((XE * F) % XE, 1);
+  arma::mat yALO = yHat + H % (eXb / (1.0 + eXb) - y) / (n - H % (eXb / square(1.0 + eXb)));
+  
+  return yALO;
+}
+
+//[[Rcpp::export]]
+arma::mat fishnetALO(const arma::mat &XE, const arma::vec &yHat, const arma::mat &y, 
+                     const double &lambda, const double &alpha, const bool &intercept) {
+  arma::uword n = XE.n_rows; // # of samples
+  arma::uword p = XE.n_cols; // # of active variables
+  
+  arma::vec eXb = exp(yHat);
+  arma::mat hessR = (1 - alpha) * lambda * arma::eye<arma::mat>(p, p);
+  if (intercept) {
+    hessR(0, 0) = 0;
+  }
+  arma::mat F = inv_sympd(XE.t() * diagmat(eXb) * XE / n + hessR);
+  arma::vec H = sum((XE * F) % XE, 1);
+  arma::mat yALO = yHat + H % (eXb - y) / (n - H % eXb);
   
   return yALO;
 }
 
 // [[Rcpp::export]]
-mat multinetALO(const mat &XESp, const mat &yHat, const mat &y, const double &lambda, const double &alpha, const bool intercept) {
+arma::mat multinetALO(const arma::mat &XESp, const arma::vec &yHat, const arma::mat &y, 
+                      const double &lambda, const double &alpha, const bool &intercept) {
   // find out the dimension of X
-  uword K = yHat.n_cols; // K
-  uword n = yHat.n_rows;
-  uword p = intercept ? XESp.n_cols - 1 : XESp.n_cols; // # of active variables, including intercepts (if any)
+  arma::uword K = y.n_cols; // # of classes
+  arma::uword n = y.n_rows;
+  arma::uword p = XESp.n_cols; // # of active variables, including intercepts (if any)
   
   // compute vector A(beta) and matrix D(beta)
-  vec A(n * K, fill::none);
-  mat D(n * K, n * K, fill::zeros);
-  vec tempA;
-  for (uword i = 0; i < n; ++i) {
-    // use span() instead
-    // check out normalise() later
-    tempA = exp(yHat.rows(span(i * K, i * K + K - 1)));
-    A(span(i * K, i * K + K - 1)) = tempA / sum(tempA);
-    D(span(i * K, i * K + K - 1), span(i * K, i * K + K - 1)) = diagmat(tempA) - tempA * tempA.t();
+  arma::vec A(n * K, arma::fill::zeros);
+  arma::mat D(n * K, n * K, arma::fill::zeros);
+  arma::vec tempA;
+  for (arma::uword i = 0; i < n; ++i) {
+    tempA = normalise(exp(yHat.rows(arma::span(i * K, i * K + K - 1))), 1); // normalise to have unit 1-norm
+    A(arma::span(i * K, i * K + K - 1)) = tempA;
+    D(arma::span(i * K, i * K + K - 1), arma::span(i * K, i * K + K - 1)) = diagmat(tempA) - tempA * tempA.t();
   }
   
   // compute hessR
-  mat hessR = n * lambda * (1 - alpha) * eye<mat>(p * K, p * K);
+  arma::mat hessR = n * lambda * (1 - alpha) * arma::eye<arma::mat>(p, p);
   if (intercept) {
-    hessR(span(0, K - 1), span(0, K - 1)) = zeros<mat>(K, K); // no penalty for intercepts
+    hessR(arma::span(0, K - 1), arma::span(0, K - 1)) = arma::zeros<arma::mat>(K, K); // no penalty for intercepts
   }
   // compute matrix K(beta) and its inverse
-  mat K_inv = pinv(XESp.t() * D * XESp + hessR, 0);
+  arma::mat K_inv = pinv(XESp.t() * D * XESp + hessR, 0);
   
   // do leave-i-out prediction
-  mat aloUpdate(n, K, fill::none);
-  for (uword i = 0; i < n; ++i) {
+  arma::mat aloUpdate(K, n);
+  for (arma::uword i = 0; i < n; i++) {
     // find the X_i and y_i
-    uvec idx = regspace<uvec>(i * K, 1, (i + 1) * K - 1);
-    mat X_i = XESp.rows(idx);
-    vec y_i = conv_to<vec>::from(y.row(i));
+    arma::mat X_i = XESp.rows(arma::span(i * K, i * K + K - 1));
+    arma::vec y_i = arma::conv_to<arma::vec>::from(y.row(i));
     
     // find A_i
-    vec A_i = A(idx);
+    arma::vec A_i = A(arma::span(i * K, i * K + K - 1));
     
     // compute XKX
-    mat XKX = X_i * K_inv * X_i.t();
+    arma::mat XKX = X_i * K_inv * X_i.t();
     
-    // compute the inversion of diag(A)-A*A^T
-    mat middle_inv = pinv(diagmat(A_i) - A_i * A_i.t(), 0);
+    // compute the inversion of diag(A) - A*A^T
+    arma::mat middle_inv = pinv(diagmat(A_i) - A_i * A_i.t(), 0);
     
-    // compute the leave-i-out prediction
-    aloUpdate.row(i) = XKX * (A_i - y_i) - XKX * pinv(-middle_inv + XKX, 0) * XKX * (A_i - y_i);
+    // compute the leave-i-out update
+    aloUpdate.col(i) = XKX * (A_i - y_i) - XKX * pinv(-middle_inv + XKX, 0) * XKX * (A_i - y_i);
   }
-  mat yALO = yHat + aloUpdate;
+  arma::mat yALO = yHat + vectorise(aloUpdate);
   
   return(yALO);
 }
 
+// Vanilla, directly inverse matrices without attempting to update / downdate
 //[[Rcpp::export]]
-// Approx matrix inverse through iterating method
-mat glmnetALOVanilla(const mat &X, const vec &y, const sp_mat &beta, const vec &lambda, const double &alpha,
-                     const field<uvec> &activeList, const field<uvec> &addList, const field<uvec> &dropList,
-                     const int family, const bool intercept) {
-  // assign function pointer
-  mat (*netPtr)(const mat &, const mat &, const mat &, const double &, const double &, const bool) = NULL;
+arma::mat glmnetALODirect(const arma::mat &X, const arma::mat &y, 
+                          const arma::sp_mat &beta, const arma::vec &lambda, const double &alpha,
+                          const arma::field<arma::uvec> &addList, 
+                          const arma::field<arma::uvec> &dropList,
+                          const int family, const bool intercept) {
+  // function pointer for polymorphism
+  arma::mat (*netPtr)(const arma::mat &, const arma::vec &, const arma::mat &, const double &, const double &, const bool &) = NULL;
   if (family == 0) {
     netPtr = &elnetALO;
   } else if (family == 1) {
@@ -131,62 +141,63 @@ mat glmnetALOVanilla(const mat &X, const vec &y, const sp_mat &beta, const vec &
   }
   
   // preamble
-  uvec currXIdx = activeList(0);
-  mat aloUpdate(X.n_rows, beta.n_cols, fill::zeros); // matrix storing ALO estimates
-  vec yHat = X * beta.col(0);
-  mat XE = X.cols(currXIdx);
-  aloUpdate.col(0) = netPtr(XE, yHat, y, lambda(0), alpha, intercept);
+  arma::uvec currActiveID = addList(0);
+  arma::mat yALO(X.n_rows, beta.n_cols, arma::fill::zeros); // matrix storing ALO estimates
+  arma::vec yHat = X * beta.col(0);
+  arma::mat XE = X.cols(currActiveID);
+  yALO.col(0) = netPtr(XE, yHat, y, lambda(0), alpha, intercept);
   
   // update through all lambdas
-  uvec toAdd;
-  uvec toDrop;
-  uvec XEcolIdx;
-  uvec dropIdx;
-  for (uword i = 1; i < beta.n_cols; i++) {
+  arma::uvec toAdd;
+  arma::uvec toDrop;
+  arma::uvec keepID;
+  arma::uvec dropID;
+  for (arma::uword i = 1; i < beta.n_cols; i++) {
     // checkUserInterrupt();
-    toAdd = addList(i - 1); // columns to add
-    toDrop = dropList(i - 1); // columns to drop
+    toAdd = addList(i); // variables to add
+    toDrop = dropList(i - 1); // variables to drop
     
-    if (currXIdx.n_elem > 0) {
+    if (currActiveID.n_elem > 0) {
       // remove variables
       if (toDrop.n_elem > 0) {
-        XEcolIdx = regspace<uvec>(0, currXIdx.n_elem - 1);
-        dropIdx.zeros(toDrop.n_elem);
-        for (uword j = 0; j < toDrop.n_elem; j++) {
-          dropIdx(j) = conv_to<uword>::from(find(currXIdx == toDrop(j), 1, "first"));
+        keepID = arma::regspace<arma::uvec>(0, currActiveID.n_elem - 1);
+        dropID.zeros(toDrop.n_elem);
+        for (arma::uword j = 0; j < toDrop.n_elem; j++) {
+          dropID(j) = arma::as_scalar(arma::find(currActiveID == toDrop(j), 1, "first"));
         }
-        dropIdx = sort(dropIdx, "descend");
-        for (uword j = 0; j < toDrop.n_elem; j++) {
-          currXIdx.shed_row(dropIdx(j));
-          XEcolIdx.shed_row(dropIdx(j));
+        dropID = sort(dropID, "descend");
+        for (arma::uword j = 0; j < toDrop.n_elem; j++) {
+          currActiveID.shed_row(dropID(j));
+          keepID.shed_row(dropID(j));
         }
-        XE = XE.cols(XEcolIdx);
+        XE = XE.cols(keepID);
       }
       // add variables
       if (toAdd.n_elem > 0) {
-        currXIdx = join_cols(currXIdx, toAdd);
+        currActiveID = join_cols(currActiveID, toAdd);
         XE = join_rows(XE, X.cols(toAdd));
       }
     } else {
-      currXIdx = toAdd;
+      currActiveID = toAdd;
       XE = X.cols(toAdd);
     }
     yHat = X * beta.col(i);
-    aloUpdate.col(i) = netPtr(XE, yHat, y, lambda(i), alpha, intercept);
+    yALO.col(i) = netPtr(XE, yHat, y, lambda(i), alpha, intercept);
   }
   
-  return aloUpdate;
+  return yALO;
 }
 
+// Expand the X matrix for multinomial ALO
 // [[Rcpp::export]]
-mat multinetExpand(const mat &X, const uword K) {
-  uword n = X.n_rows;
-  uword p = X.n_cols;
-  mat XSp(n * K, p * K, fill::zeros);
-  uvec rowID, colID;
-  for (uword i = 0; i < K; i++) {
-    rowID = regspace<uvec>(0, K, n * K - K) + i;
-    colID = regspace<uvec>(p * i, p * i + p - 1);
+arma::mat multinetExpand(const arma::mat &X, const arma::uword K) {
+  arma::uword n = X.n_rows;
+  arma::uword p = X.n_cols;
+  arma::mat XSp(n * K, p * K, arma::fill::zeros);
+  arma::uvec rowID, colID;
+  for (arma::uword i = 0; i < K; i++) {
+    rowID = arma::regspace<arma::uvec>(0, K, n * K - K) + i;
+    colID = arma::regspace<arma::uvec>(p * i, p * i + p - 1);
     XSp.submat(rowID, colID) = X;
   }
   
