@@ -1,13 +1,14 @@
-library(glmnet)
+devtools::install_github("Francis-Hsu/alocv")
+library(alocv)
+library(doParallel)
 library(MASS)
-library(Rcpp)
-sourceCpp("glmnetALO.cpp")
-source("glmnetALO.R")
-source("plot.glmnetALO.R")
-source("glmnetALO.risk.R")
-source("glmnetALO.unscale.coef.R")
 
-######## Elastic Net ########
+# compare result from cv.glmnet and glmnetALO
+# note that cv.glmnet will usually skip some lambdas
+# so refit a model is necessary for comparison
+
+######## Linear ########
+# data
 n = 300
 p = 100
 k = 60
@@ -19,20 +20,29 @@ y = X %*% true_beta + rnorm(n, 0, 0.5)
 y[y >= 0] = 2 * sqrt(y[y >= 0])
 y[y < 0] = -2 * sqrt(-y[y < 0])
 
+# params
+is_intr = T
+is_stdz = T
+measure = "mse"
+
 par(mfrow = c(1, 3))
 for(a in c(0, 0.5, 1)) {
-  CV_el = cv.glmnet(X, y, nfolds = n, grouped = F, intercept = T, standardize = T, alpha = a, type.measure = "mse")
-  ALO_el = glmnetALO(X, y, a, CV_el$glmnet.fit, type.measure = "mse", standardize = T)
+  CV_el = cv.glmnet(X, y, alpha = a, nfolds = n, grouped = F, 
+                    intercept = is_intr, standardize = is_stdz, type.measure = measure)
+  glm_obj_CV = glmnet(X, y, lambda = CV_el$lambda, alpha = a, 
+                      intercept = is_intr, standardize = is_stdz)
+  ALO_el = glmnetALO(X, y, glm_obj_CV, a, standardize = is_stdz, type.measure = measure)
   
   # old school
   plot(rev(CV_el$cvm), xlab = "lambda", ylab = "Risk", type = "l", lwd = 2, col = "darkorange")
-  lines(rev(ALO_el$riskm), type = "b", pch = 4, lwd = 2, col = 4)
+  lines(rev(ALO_el$alom), type = "b", pch = 4, lwd = 2, col = 4)
 }
-par(mfrow = c(1, 1))
+par(mfrow = c(2, 1))
 plot(CV_el)
 plot(ALO_el)
 
 ######## Logistic ########
+# data
 n = 300
 p = 100
 k = 60
@@ -42,44 +52,61 @@ true_beta[-(1:k)] = 0
 X = matrix(rnorm(n * p, 0, sqrt(1 / k)), n, p)
 y = rbinom(n, size = 1, prob = 1 / (1 + exp(-X %*% true_beta)))
 
-# TODO: index bug?
+# params
+is_intr = T
+is_stdz = T
+measure = "mse"
+
 par(mfrow = c(1, 3))
 for(a in c(0, 0.5, 1)) {
-  CV_bin = cv.glmnet(X, y, family = "binomial", nlambda = 50, nfolds = n, grouped = F, 
-                     intercept = T, standardize = F, alpha = a, type.measure = "mse")
-  ALO_bin = glmnetALO(X, y, a, CV_bin$glmnet.fit, type.measure = "mse", standardize = F)
+  CV_bin = cv.glmnet(X, y, family = "binomial", alpha = a, nlambda = 35, nfolds = n, grouped = F, 
+                     intercept = is_intr, standardize = is_stdz, type.measure = measure)
+  glm_obj_CV = glmnet(X, y, family = "binomial", lambda = CV_bin$lambda, alpha = a, 
+                      intercept = is_intr, standardize = is_stdz)
+  ALO_bin = glmnetALO(X, y, glm_obj_CV, a, standardize = is_stdz, type.measure = measure)
   
   # old school
   plot(rev(CV_bin$cvm), xlab = "lambda", ylab = "Risk", type = "l", lwd = 2, col = "darkorange")
-  lines(rev(ALO_bin$riskm), type = "b", pch = 4, lwd = 2, col = 4)
+  lines(rev(ALO_bin$alom), type = "b", pch = 4, lwd = 2, col = 4)
 }
+par(mfrow = c(2, 1))
+plot(CV_bin)
+plot(ALO_bin)
 
 ######## Poisson ########
+# data
 n = 300
 p = 100
 k = 60
-true_beta = abs(rnorm(p, 0, 0.25))
+true_beta = rnorm(p, 0, 0.25)
 true_beta[-(1:k)] = 0
 
-X = abs(matrix(rnorm(n * p, 1 / k, sqrt(1 / k)), n, p))
-y = rpois(n, lambda = exp(X %*% true_beta)) + 1
+X = matrix(rnorm(n * p, 1 / k, sqrt(1 / k)), n, p)
+y = rpois(n, lambda = exp(1 + X %*% true_beta))
 
-# TODO: standardization not working
+# params
+is_intr = T
+is_stdz = F
+measure = "mse"
+
 par(mfrow = c(1, 3))
 for(a in c(0, 0.5, 1)) {
-  CV_pois = cv.glmnet(X, y, family = "poisson", nlambda = 25, nfolds = n, grouped = F, 
-                      intercept = T, standardize = F, alpha = a, type.measure = "mse")
-  
-  ALO_pois = glmnetALO(X, y, a, CV_pois$glmnet.fit, type.measure = "mse", standardize = F)
+  CV_pois = cv.glmnet(X, y, family = "poisson", alpha = a, nlambda = 25, nfolds = n, grouped = F, 
+                      intercept = is_intr, standardize = is_stdz, type.measure = measure)
+  glm_obj_CV = glmnet(X, y, family = "poisson", lambda = CV_pois$lambda, alpha = a, 
+                      intercept = is_intr, standardize = is_stdz)
+  ALO_pois = glmnetALO(X, y, glm_obj_CV, a, standardize = is_stdz, type.measure = measure)
   
   # old school
   plot(rev(CV_pois$cvm), xlab = "lambda", ylab = "Risk", type = "l", lwd = 2, col = "darkorange")
-  lines(rev(ALO_pois$riskm), type = "b", pch = 4, lwd = 2, col = 4)
+  lines(rev(ALO_pois$alom), type = "b", pch = 4, lwd = 2, col = 4)
 }
+par(mfrow = c(2, 1))
 plot(CV_pois)
 plot(ALO_pois)
 
 ######## Multinomial ########
+# data
 n = 250
 p = 100
 k = 60
@@ -95,16 +122,29 @@ prob = exp(y.linear) / matrix(rep(rowSums(exp(y.linear)), num_class), ncol =
                                 num_class)
 y.mat = t(apply(prob, 1, function(x) rmultinom(1, 1, prob = x))) # N * K matrix (N - #obs, K - #class)
 
-# TODO: issue with some lambda choice
+# params
+lambda = 10^seq(-3.5, -0.5, length.out = 25)
+is_intr = T
+is_stdz = F
+measure = "mse"
+
+# TODO: cv.glmnet has convergence issue with some lambda choice
+# TODO: standardization may still have some issues, need investigate
+cl = makeCluster(detectCores())
+registerDoParallel(cl)
 par(mfrow = c(1, 3))
 for(a in c(0, 0.5, 1)) {
-  CV_ml = cv.glmnet(X, y.mat, family = "multinomial", nlambda = 25, nfolds = n, grouped = F, 
-                    intercept = T, standardize = F, alpha = a, type.measure = "mse")
-  ALO_ml = glmnetALO(X, y.mat, a, CV_ml$glmnet.fit, standardize = F)
+  CV_ml = cv.glmnet(X, y.mat, family = "multinomial", alpha = a, lambda = lambda, nfolds = n, grouped = F, 
+                    intercept = is_intr, standardize = is_stdz, type.measure = measure, parallel = T, maxit = 1e06)
+  glm_obj_CV = glmnet(X, y.mat, family = "multinomial", lambda = CV_ml$lambda, alpha = a, 
+                      intercept = is_intr, standardize = is_stdz)
+  ALO_ml = glmnetALO(X, y.mat, glm_obj_CV, a, standardize = is_stdz, type.measure = measure)
   
   # old school
   plot(rev(CV_ml$cvm), xlab = "lambda", ylab = "Risk", type = "l", lwd = 2, col = "darkorange")
-  lines(rev(ALO_ml$riskm), type = "b", pch = 4, lwd = 2, col = 4)
+  lines(rev(ALO_ml$alom), type = "b", pch = 4, lwd = 2, col = 4)
 }
+stopCluster(cl)
+par(mfrow = c(2, 1))
 plot(CV_ml)
 plot(ALO_ml)
