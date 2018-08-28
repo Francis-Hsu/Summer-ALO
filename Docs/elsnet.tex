@@ -289,29 +289,35 @@ The optimization function for Poisson regression with lasso penalty is: \[\sum_{
 The loss function for Poisson regression with elastic net penalty is the same as that of Poisson regression with the lasso penalty and the regularizer of it is the same as that of logistic regression with elastic net penalty. Thus by plugging everything into \refthm{Eqn.}{22}, we could obtain the ALO for Poisson regression with elastic net penalty.
 
 \section{Usage of ALO formulae with \texttt{glmnet} package}
-The \verb|glmnet| package scales the elastic net loss function by a factor of \(1/n\), so the ALO formulae must be adjusted accordingly, e.g. for the proximal case, we instead have: \[\tilde{y}_j^{\setminus i}=\hat{y}_j+\frac{\bH_{ii}(\hat{y}_j-y_j)}{n-\bH_{ii}},\qquad\bH=\gamma\bX_{\cdot,E}\left[\frac{\gamma}{n}\bX_{\cdot,E}^\top\bX_{\cdot,E}+\left(1-\gamma\right)\bI_{E,E}\right]^{-1}\bX_{\cdot,E}^\top.\]
-
-Furthermore, for regression problems \verb|glmnet| implicitly ``standardizes \(y\) to have unit variance before computing its \(\lambda\) sequence (and then unstandardizes the resulting coefficients)'' (\emph{cf.} [\href{https://web.stanford.edu/~hastie/glmnet/glmnet_alpha.html}{Glmnet Vignette}]). So to get comparable results, it is necessary to rescale \(\by\) by the MLE \(\hat{\sigma}_y\) before fitting the model. \autoref{fig:elsnet} shows the comparison of the ALO and LOO for different \(\alpha\)s. Without standardizing \(\by\) first, a growing discrepancy between the two curves can be observed as \(\alpha\to0\).
-
-More precisely, \verb|glmnet| is in fact optimizing the following problem: 
+The \verb|glmnet| package scales the elastic net loss function by a factor of \(1/n\). Furthermore, for linear problems \verb|glmnet| implicitly ``standardizes \(y\) to have unit variance before computing its \(\lambda\) sequence (and then unstandardizes the resulting coefficients)'' (\emph{cf.} [\href{https://web.stanford.edu/~hastie/glmnet/glmnet_alpha.html}{Glmnet Vignette}]). So to get comparable results, it is necessary to rescale \(\by\) by the MLE \(\hat{\sigma}_y\) before fitting the model. More precisely, \verb|glmnet| is in fact optimizing the following problem: 
 	\begin{equation}
-		\min_{\beta_0^\ast,\bm{\beta}^\ast}\frac{1}{2n}\sum_{j=1}^{n}\left(y_j^\ast-\beta_0^\ast-\bm{x}_j^T\bm{\beta}^\ast\right)^2+\lambda\alpha\|\bm{\beta}^\ast\|_1+\frac{1}{2}\lambda(1-\alpha)\|\bm{\beta}^\ast\|_2^2,
+	\min_{\bbeta}\frac{1}{2n}\sum_{j=1}^{n}\left(\frac{\bx_j^\top\bbeta}{\hat{\sigma}_y}-\frac{y_j}{\hat{\sigma}_y}\right)^2+\frac{\lambda}{\hat{\sigma}_y}\alpha\|\bbeta\|_1+\frac{\lambda}{\hat{\sigma}^2_y}\frac{1-\alpha}{2}\|\bbeta\|_2^2.
 	\end{equation}
-where \[\by^\ast=\frac{\by}{\hat{\sigma}_y},\qquad\beta_0^\ast=\frac{\beta_0}{\hat{\sigma}_y},\qquad\bbeta^\ast=\frac{\bbeta}{\hat{\sigma}_y}.\] As a result, to match the original elastic net problem, we may rescale \(\by\), \(\bX\), and \(\lambda\), to get:
-\begin{equation}
-	\min_{\beta_0,\bm{\beta}}\frac{1}{2n}\sum_{j=1}^{n}\left(y_j^\ast-\beta_0^\ast-\bm{x}_j^{\ast\top}\bm{\beta}\right)^2+\lambda^\ast\alpha\|\bm{\beta}\|_1+\frac{1}{2}\lambda^\ast(1-\alpha)\|\bm{\beta}\|_2^2,
-\end{equation} 
-where \[\bX^\ast=\frac{\bX}{\hat{\sigma}_y},\qquad\lambda=\frac{\lambda}{\hat{\sigma}_y^2}.\]
-	\begin{figure}[!htbp]
+We thus have \[\dot{\ell}(\bx_j^\top\bbeta\semicol y_j)=\frac{\bx_j^\top\bbeta}{n\hat{\sigma}_y}-\frac{y_j}{n\hat{\sigma}_y},\qquad\ddot{\ell}(\bx_j^\top\bbeta\semicol y_j)=\frac{1}{n\hat{\sigma}_y},\qquad\nabla^2 R(\hat{\bbeta}_A)=\frac{(1-\alpha)\lambda}{\hat{\sigma}_y^2}\bI_{A,A}.\] Hence, for the linear elastic net problem, the primal ALO is: \[\tilde{y}_j^{\setminus i}=\hat{y}_j+\frac{\bH_{ii}(\hat{y}_j-y_j)}{n\hat{\sigma}_y-\bH_{ii}},\qquad\bH=\bX_{\cdot,A}\left[\frac{1}{n\hat{\sigma}_y}\bX_{\cdot,A}^\top\bX_{\cdot,A}+\frac{\left(1-\alpha\right)\lambda}{\hat{\sigma}_y^2}\bI_{A,A}\right]^{-1}\bX_{\cdot,A}^\top.\]
+We get further complication when option \verb|standardization = T| is given, in which case \verb|glmnet| first standardize the data \(\bX\) using \(\hat{\sigma}_{\bX}\) (assuming \(\bX\) is standardized):
+	\begin{itemize}
+		\item If \verb|intercept = F|, compute \(\bX^\ast=\diag[\hat{\sigma}_y\hat{\sigma}_{\bX}]^{-1}\bX\).
+		\item If \verb|intercept = T|, compute \(\bX^\ast=\diag[\hat{\sigma}_y\hat{\sigma}_{\bX}]^{-1}(\bX-\bar{\bX}\bm{1}\bm{1}^\top)\).
+	\end{itemize} Afterwards, the the coefficients are returned de-standardized:
+	\begin{itemize}
+		\item Let \((\beta_0, \bbeta)\) be the original intercept and coefficients, compute \(\bbeta^\ast=\hat{\sigma}_y\diag[\hat{\sigma}_{\bX}]^{-1}\bbeta\) then \(\beta_0^\ast=\beta_0-\bar{\bX}\bbeta^\ast\). 
+		\item Return pair \((\beta_0^\ast, \bbeta^\ast)\).
+	\end{itemize}
+For logistics and Poisson regression the standardization procedure is basically the same, except \verb|glmnet| no longer standardize by \(\hat{\sigma}_y\), which make sense since \(\by\) is now either categorical or count data.
+
+\section{Benchmark}
+\begin{table}[H]
 	\centering
-	\begin{subfigure}[b]{\textwidth}
-		\includegraphics[width=\textwidth]{elsnet1.png}
-		\caption{With standardization on \(\by\).}
-	\end{subfigure}
-	\begin{subfigure}[b]{\textwidth}
-		\includegraphics[width=\textwidth]{elsnet2.png}
-		\caption{Without standardization on \(\by\)}
-	\end{subfigure}
-	\caption{ALO vs. LOO for elastic net with intercept, misspecification example.\label{fig:elsnet}}
-	\end{figure}
+	\begin{tabular}{ccc|cc|c|c}
+		\hline\hline
+		\(n\) & \(p\) & \(k\) & Average ALO & Average 5-fold CV & Relative & \(n\) full fit \\\hline
+		300 & 100 & 60 & 0.016 & 0.053 & 3.313 & 1.2\\
+		500 & 800 & 500 & 0.251 & 0.533 & 2.124 & 36.5\\
+		1000 & 1200 & 800 & 0.489 & 1.200 & 2.454 & 211.0\\
+		2500 & 2000 & 1200 & 2.267 & 3.623 & 1.598 & 1577.5\\
+		5000 & 2500 & 2000 & 5.017 & 8.097 & 1.614 & 7740.0\\
+		10000 & 10000 & 2500 & 27.236 & 36.520 & 1.341 & 62530.0\\\hline
+	\end{tabular} 
+	\caption{Average elapsed time (in seconds) comparison, 10 runs, \(\alpha=0.5\).}
+\end{table}
 \end{document}
