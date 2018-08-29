@@ -1,0 +1,219 @@
+\documentclass[11pt]{article}
+\usepackage{fullpage,titling}
+\usepackage{mathtools,amssymb,amsthm}
+\usepackage{bm}
+\usepackage{tikz}
+\usepackage{hyperref}
+\usepackage{array}
+\usepackage{float}
+\usepackage{subcaption}
+\usepackage{lstautogobble}
+\usepackage[T1]{fontenc}
+\usepackage{newpxtext,newpxmath}
+\usepackage[activate={true,nocompatibility},final,tracking=true, kerning=true, spacing=true, factor=1100, stretch=10, shrink=10]{microtype}
+
+\newcommand{\bu}{\bm{u}}
+\newcommand{\bx}{\bm{x}}
+\newcommand{\by}{\bm{y}}
+\newcommand{\bz}{\bm{z}}
+\newcommand{\bA}{\bm{A}}
+\newcommand{\bD}{\bm{D}}
+\newcommand{\bH}{\bm{H}}
+\newcommand{\bI}{\bm{I}}
+\newcommand{\bJ}{\bm{J}}
+\newcommand{\bK}{\bm{K}}
+\newcommand{\bX}{\bm{X}}
+\newcommand{\bY}{\bm{Y}}
+\newcommand{\bbeta}{\bm{\beta}}
+\newcommand{\btheta}{\bm{\theta}}
+\newcommand{\bXb}{\bm{\mathcal{X}}}
+\newcommand{\bBb}{\bm{\mathcal{B}}}
+
+\newcommand{\bbr}{\mathbb{R}} 
+\newcommand{\bbq}{\mathbb{Q}}
+\newcommand{\bbn}{\mathbb{N}}
+
+\newcommand{\semicol}{\nobreak\mskip2mu\mathpunct{}\nonscript\mkern-\thinmuskip{;}\mskip6muplus1mu\relax}
+
+\DeclareMathOperator{\sign}{sgn}
+\DeclareMathOperator{\prox}{prox}
+\DeclareMathOperator{\diag}{diag}
+\DeclareMathOperator{\bprox}{\mathbf{prox}}
+\DeclareMathOperator*{\argmin}{arg\,min}
+
+\newcommand{\refthm}[2]{#1~#2}
+
+\title{Approximate Leave-One-Out with \texttt{glmnet}}
+\author{Linyun He \and Wanchao Qin \and Peng Xu \and Yuze Zhou}
+
+\begin{document}
+\maketitle
+
+\section{ALO for Linear Regression}
+Recall the objective function for the elastic net problem:
+	\begin{equation*}
+	\min_{\bbeta}\frac{1}{2}\sum_{j=1}^{n}(\bx_j^\top\bbeta-y_j)^2+\lambda\left(\alpha\|\bbeta\|_1+\frac{1-\alpha}{2}\|\bbeta\|_2^2\right).
+	\end{equation*}
+Let \(E=\{i:\beta_i\not\in K,i=1,\dotsc,p\}\) be the active set, the ALO formula is \[\bx_i^\top\tilde{\bbeta}^{\setminus j}\approx\bx_i^\top\hat{\bbeta}+\frac{\bH_{ii}\left(\bx_j^\top\hat{\bbeta}-y_j\right)}{1-\bH_{ii}},\qquad\bH=\bX_{\cdot,E}\left[\bX_{\cdot,E}^\top\bX_{\cdot,E}+\left(1-\alpha\right)\lambda\bI_{E,E}\right]^{-1}\bX_{\cdot,E}^\top.\] 
+\section{ALO for Logistic Regression}
+For binomial logistic regression, the primal problem is: \[\min_{\bbeta}\sum_{j=1}^{n}\left[\ln\left(1+e^{\bx_j^\top\bbeta}\right)-y_j\bx_j^\top\bbeta\right]+\lambda\left(\alpha\|\bbeta\|_1+\frac{1-\alpha}{2}\|\bbeta\|_2^2\right).\] Let \(E\) be the active set, the ALO formula is \[\bx_i^\top\tilde{\bbeta}^{\setminus j}\approx\bx_i^\top\hat{\bbeta}+\frac{\bH_{ii}\left(1+e^{\bx_j^\top\hat{\bbeta}}\right)\left[e^{\bx_j^\top\hat{\bbeta}}-y_j\left(1+e^{\bx_j^\top\hat{\bbeta}}\right)\right]}{\left(1+e^{\bx_j^\top\hat{\bbeta}}\right)^2-\bH_{ii}e^{\bx_j^\top\hat{\bbeta}}},\] where \[\bH=\bX_{\cdot,E}\left[\bX_{\cdot,E}^\top\diag\left(\frac{e^{\bx_j^\top\hat{\bbeta}}}{1+2e^{\bx_j^\top\hat{\bbeta}}+e^{2\bx_j^\top\hat{\bbeta}}}\right)\bX_{\cdot,E}+(1-\alpha)\lambda\bI_{A,A}\right]^{-1}\bX_{\cdot,E}^\top.\]
+
+\section{ALO for Poisson Regression}
+For Poisson regression, the primal problem is: \[\min_{\bbeta}\sum_{j=1}^{n}\left(e^{\bx_j^\top\bbeta}-y_j\bx_j^\top\bbeta\right)+\lambda\left(\alpha\|\bbeta\|_1+\frac{1-\alpha}{2}\|\bbeta\|_2^2\right).\] Let \(E\) be the active set, the ALO formula is \[\bx_i^\top\tilde{\bbeta}^{\setminus j}\approx\bx_i^\top\hat{\bbeta}+\frac{\bH_{ii}\left(e^{\bx_j^\top\hat{\bbeta}}-y_j\right)}{1-\bH_{ii}e^{\bx_j^\top\hat{\bbeta}}},\] where \[\bH=\bX_{\cdot,E}\left[\bX_{\cdot,E}^\top\diag\left(e^{\bx_j^\top\hat{\bbeta}}\right)\bX_{\cdot,E}+(1-\alpha)\lambda\bI_{A,A}\right]^{-1}\bX_{\cdot,E}^\top.\]
+
+\section{ALO for Multinomial Regression}
+Assume that the response variable comes in as an \(n\times K\) matrix indicator matrix, where \(K\) is the number of classes. We re-parametrize by considering \(\bBb=\operatorname{vec}(\bm{B})\):
+\[\bY=\begin{bmatrix}
+\by_{1} \\
+\by_{2} \\
+\vdots \\
+\by_{K} \\
+\end{bmatrix}=\begin{bmatrix}
+\begin{bmatrix}
+y_{11} \\
+y_{12} \\
+\vdots \\
+y_{1K} \\
+\end{bmatrix} \\
+\begin{bmatrix}
+y_{21} \\
+y_{22} \\
+\vdots \\
+y_{2K} \\
+\end{bmatrix} \\
+\vdots \\
+\begin{bmatrix}
+y_{n1} \\
+y_{n2} \\
+\vdots \\
+y_{nK} \\
+\end{bmatrix} \\
+\end{bmatrix},\qquad
+\bXb=\begin{bmatrix}
+\bX_{1} \\
+\bX_{2} \\
+\vdots \\
+\bX_{K} \\
+\end{bmatrix}=\begin{bmatrix}
+\begin{bmatrix}
+\bx_1^\top & 0 & \cdots & 0 \\
+0 & \bx_1^\top & \cdots & 0 \\
+\vdots & \vdots & \ddots & \vdots \\
+0 & 0 & \cdots & \bx_1^\top \\
+\end{bmatrix} \\
+\begin{bmatrix}
+\bx_2^\top & 0 & \cdots & 0 \\
+0 & \bx_2^\top & \cdots & 0 \\
+\vdots & \vdots & \ddots & \vdots \\
+0 & 0 & \cdots & \bx_2^\top \\
+\end{bmatrix} \\
+\vdots \\
+\begin{bmatrix}
+\bx_n^\top & 0 & \cdots & 0 \\
+0 & \bx_n^\top & \cdots & 0 \\
+\vdots & \vdots & \ddots & \vdots \\
+0 & 0 & \cdots & \bx_n^\top \\
+\end{bmatrix} \\
+\end{bmatrix},\qquad
+\bBb=\begin{bmatrix}
+\bbeta_{1} \\
+\bbeta_{2} \\
+\vdots \\
+\bbeta_{K} \\
+\end{bmatrix}.\]
+Again let \(E\) denote the active set. Further, let \[\bm{\mathcal{A}}(\bBb)\coloneqq\begin{bmatrix}
+\bm{A}_1(\bBb) \\
+\bm{A}_2(\bBb) \\
+\vdots \\
+\bm{A}_n(\bBb)
+\end{bmatrix}=\begin{bmatrix}
+\begin{bmatrix}\frac{\exp\left(\bX_1^\top\bbeta_1\right)}{\sum_{k=1}^K\exp\left(\bX_1^\top\bbeta_k\right)} \\
+\vdots \\
+\frac{\exp\left(\bX_1^\top\bbeta_K\right)}{\sum_{k=1}^K\exp\left(\bX_1^\top\bbeta_k\right)} \\
+\end{bmatrix} \\
+\begin{bmatrix}
+\frac{\exp\left(\bX_2^\top\bbeta_1\right)}{\sum_{k=1}^K\exp\left(\bX_2^\top\bbeta_k\right)} \\
+\vdots \\
+\frac{\exp\left(\bX_2^\top\bbeta_K\right)}{\sum_{k=1}^K\exp\left(\bX_2^\top\bbeta_k\right)} \\
+\end{bmatrix} \\
+\vdots \\
+\begin{bmatrix}
+\frac{\exp\left(\bX_n^\top\bbeta_1\right)}{\sum_{k=1}^K\exp\left(\bX_n^\top\bbeta_k\right)} \\
+\vdots \\
+\frac{\exp\left(\bX_n^\top\bbeta_K\right)}{\sum_{k=1}^K\exp\left(\bX_n^\top\bbeta_k\right)} \\
+\end{bmatrix}\end{bmatrix},\] and \[\bm{\mathcal{D}}(\bm{\mathcal{B}})\coloneqq\begin{bmatrix}
+\left[{\rm diag}\left(\bm{A}_1(\bm{\mathcal{B}})\right)-\bm{A}_1(\bm{\mathcal{B}})\bm{A}_1(\bm{\mathcal{B}})^\top\right] & \cdots & 0 \\
+\vdots & \ddots & \vdots \\
+0 & \cdots & \left[{\rm diag}\left(\bm{A}_n(\bm{\mathcal{B}})\right)-\bm{A}_n(\bm{\mathcal{B}})\bm{A}_n(\bm{\mathcal{B}})^\top\right]\end{bmatrix}.\] Finally, define \[\bm{\mathcal{K}}(\bXb,\bBb)\coloneqq
+\bm{\mathcal{X}}^\top
+\bm{\mathcal{D}}(\bBb)\bm{\mathcal{X}}+\nabla^2R(\bm{\mathcal{B}}),\qquad\bm{\mathcal{G}}_{i, E}(\bXb,\bBb)\coloneqq\bX_{i, E}\bm{\mathcal{K}}(\bXb_{\cdot,E},\hat{\bBb})^{+}\bX_{i,E}^\top.\] Then, with Newton's method, we can approximate the leave-\(i\)-out prediction as 
+	\begin{align*}
+	\bX_i\tilde{\bm{\mathcal{B}}}^{\setminus i}&=\bX_i\hat{\bBb}+\bm{\mathcal{G}}_{i, E}(\bXb,\bBb)\left(\bm{A}_i(\hat{\bBb})-\by_i\right)\\
+	&\quad-\bm{\mathcal{G}}_{i, E}(\bXb,\hat{\bBb})\left\{\bm{\mathcal{G}}_{i, E}(\bXb,\hat{\bBb})-\left[{\rm diag}\left(\bm{A}_i(\hat{\bBb})\right)-\bm{A}_i(\hat{\bBb})\bm{A}_i(\hat{\bBb})^\top\right]^{+}\right\}^{+}\bm{\mathcal{G}}_{i, E}(\bXb,\hat{\bBb})\left(\bm{A}_i(\hat{\bBb})-\by_i\right) 
+	\end{align*}
+	
+\section{ALO with Intercept}
+Including the intercept is straightforward. As we can augment \(\bX\) with an extra column of \(1\)s, i.e. \(\bX^\ast=\left[\bm{1}_n,\bm{X}\right]\). Since the intercept is not reugularized, we need to change the corresponding second partial derivatives to \(0\), e.g. \[\nabla^2R\left(\hat{\beta}_0,\hat{\bm{\beta}}_A\right)=\begin{bmatrix}
+0 & 0 & \dots & 0 \\
+0 & (1-\alpha)\lambda & \dots & 0\\
+\vdots & \vdots & \ddots & \vdots\\
+0 & 0 & \dots & (1-\alpha)\lambda \\
+\end{bmatrix}.\] 
+
+For multinomial model it can be a bit more complicated since there are now \(K\) intercepts. For programming convenience we augment \(\bXb\) by block of \(\bI_K\) and stack the intercepts on tops of \(\bBb\), i.e. \[\bXb^\ast=\begin{bmatrix}
+\begin{bmatrix}
+\bI_K & \bX_{1}
+\end{bmatrix}\\
+\begin{bmatrix}
+\bI_K & \bX_{2}
+\end{bmatrix}\\
+\vdots\\
+\begin{bmatrix}
+\bI_K & \bX_{K}
+\end{bmatrix}
+\end{bmatrix},\qquad\bBb^\ast=\begin{bmatrix}
+\beta_{01}\\
+\vdots\\
+\beta_{0K}\\
+\bbeta_{1} \\
+\vdots \\
+\bbeta_{K} \\
+\end{bmatrix}.\] Accordingly, the first \(K\) diagonal elements of \(\nabla^2R\) will be set to \(0\).
+
+
+\section{Usage of ALO formulae with \texttt{glmnet} package}
+The \verb|glmnet| package scales the elastic net loss function by a factor of \(1/n\). Furthermore, for linear problems \verb|glmnet| implicitly ``standardizes \(y\) to have unit variance before computing its \(\lambda\) sequence (and then unstandardizes the resulting coefficients)''. So it is necessary to rescale \(\by\) by the MLE \(\hat{\sigma}_y\) before fitting the model. For instance, \verb|glmnet| is in fact optimizing the following problem for linear regression (assuming \(\bX\) is already standardized): 
+	\begin{equation}
+	\min_{\bbeta}\frac{1}{2n}\sum_{j=1}^{n}\left(\frac{\bx_j^\top\bbeta}{\hat{\sigma}_y}-\frac{y_j}{\hat{\sigma}_y}\right)^2+\frac{\lambda}{\hat{\sigma}_y}\alpha\|\bbeta\|_1+\frac{\lambda}{\hat{\sigma}^2_y}\frac{1-\alpha}{2}\|\bbeta\|_2^2.
+	\end{equation}
+We thus have \[\dot{\ell}(\bx_j^\top\bbeta\semicol y_j)=\frac{\bx_j^\top\bbeta}{n\hat{\sigma}_y}-\frac{y_j}{n\hat{\sigma}_y},\qquad\ddot{\ell}(\bx_j^\top\bbeta\semicol y_j)=\frac{1}{n\hat{\sigma}_y},\qquad\nabla^2 R(\hat{\bbeta}_A)=\frac{(1-\alpha)\lambda}{\hat{\sigma}_y^2}\bI_{A,A}.\] Hence, for the linear elastic net problem, the primal ALO is: \[\tilde{y}_j^{\setminus i}=\hat{y}_j+\frac{\bH_{ii}(\hat{y}_j-y_j)}{n\hat{\sigma}_y-\bH_{ii}},\qquad\bH=\bX_{\cdot,E}\left[\frac{1}{n\hat{\sigma}_y}\bX_{\cdot,E}^\top\bX_{\cdot,E}+\frac{\left(1-\alpha\right)\lambda}{\hat{\sigma}_y^2}\bI_{A,A}\right]^{-1}\bX_{\cdot,E}^\top.\]
+
+Further complications present when option \verb|standardization = T| is given, in which case \verb|glmnet| first standardize the data \(\bX\) using \(\hat{\sigma}_{\bX}\):
+	\begin{itemize}
+		\item If \verb|intercept = F|, compute \(\bX^\ast=\diag[\hat{\sigma}_y\hat{\sigma}_{\bX}]^{-1}\bX\).
+		\item If \verb|intercept = T|, compute \(\bX^\ast=\diag[\hat{\sigma}_y\hat{\sigma}_{\bX}]^{-1}(\bX-\bar{\bX}\bm{1}\bm{1}^\top)\).
+	\end{itemize} 
+Afterwards, the the coefficients are returned unstandardized, i.e. let \((\beta_0, \bbeta)\) denotes the original intercept and coefficients, \verb|glmnet| reports \[\bbeta^\ast=\hat{\sigma}_y\diag[\hat{\sigma}_{\bX}]^{-1}\bbeta,\qquad\beta_0^\ast=\beta_0-\bar{\bX}\bbeta^\ast.\] 
+For logistics and Poisson regression the standardization procedure is basically the same, except \verb|glmnet| no longer standardize by \(\hat{\sigma}_y\), which make sense since \(\by\) is now either categorical or count data.
+
+\section{Benchmark}
+\begin{table}[H]
+	\centering
+	\begin{tabular}{ccc|cc|c|c}
+		\hline\hline
+		\(n\) & \(p\) & \(k\) & Average ALO & Average 5-fold CV & Relative & \(n\) full fit \\\hline
+		300 & 100 & 60 & 0.016 & 0.053 & 3.313 & 1.2\\
+		500 & 800 & 500 & 0.251 & 0.533 & 2.124 & 36.5\\
+		1000 & 1200 & 800 & 0.489 & 1.200 & 2.454 & 211.0\\
+		2500 & 2000 & 1200 & 2.267 & 3.623 & 1.598 & 1577.5\\
+		5000 & 2500 & 2000 & 5.017 & 8.097 & 1.614 & 7740.0\\
+		10000 & 10000 & 2500 & 27.236 & 36.520 & 1.341 & 62530.0\\\hline
+	\end{tabular} 
+	\caption{Averaged (over 10 runs) elapsed time (in seconds) comparison, 25 \(\lambda\)s, \(\alpha=0.5\).}
+\end{table}
+
+\begin{thebibliography}{1}
+\bibitem{notes} Trevor Hastie \& Junyang Qian, \href{https://web.stanford.edu/~hastie/glmnet/glmnet_alpha.html}{\emph{Glmnet Vignette}}.
+	
+\end{thebibliography}
+\end{document}

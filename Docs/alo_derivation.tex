@@ -1,0 +1,566 @@
+\documentclass[11pt]{article}
+\usepackage{fullpage,titling}
+\usepackage{mathtools,amssymb,amsthm}
+\usepackage{bm}
+\usepackage{tikz}
+\usepackage{hyperref}
+\usepackage{array}
+\usepackage{float}
+\usepackage{subcaption}
+\usepackage{lstautogobble}
+\usepackage[T1]{fontenc}
+\usepackage{newpxtext,newpxmath}
+\usepackage[activate={true,nocompatibility},final,tracking=true, kerning=true, spacing=true, factor=1100, stretch=10, shrink=10]{microtype}
+
+\newcommand{\ba}{\bm{a}}
+\newcommand{\bu}{\bm{u}}
+\newcommand{\bv}{\bm{v}}
+\newcommand{\bx}{\bm{x}}
+\newcommand{\by}{\bm{y}}
+\newcommand{\bz}{\bm{z}}
+\newcommand{\bA}{\bm{A}}
+\newcommand{\bD}{\bm{D}}
+\newcommand{\bH}{\bm{H}}
+\newcommand{\bI}{\bm{I}}
+\newcommand{\bJ}{\bm{J}}
+\newcommand{\bK}{\bm{K}}
+\newcommand{\bX}{\bm{X}}
+\newcommand{\bY}{\bm{Y}}
+\newcommand{\bbeta}{\bm{\beta}}
+\newcommand{\btheta}{\bm{\theta}}
+\newcommand{\bXb}{\bm{\mathcal{X}}}
+\newcommand{\bBb}{\bm{\mathcal{B}}}
+\newcommand{\bZero}{\bm{0}}
+\newcommand{\bOne}{\bm{1}}
+\newcommand{\bbr}{\mathbb{R}} 
+\newcommand{\bbq}{\mathbb{Q}}
+\newcommand{\bbn}{\mathbb{N}}
+
+\newcommand{\semicol}{\nobreak\mskip2mu\mathpunct{}\nonscript\mkern-\thinmuskip{;}\mskip6muplus1mu\relax}
+
+\DeclareMathOperator{\sign}{sgn}
+\DeclareMathOperator{\prox}{prox}
+\DeclareMathOperator{\diag}{diag}
+\DeclareMathOperator{\bprox}{\mathbf{prox}}
+\DeclareMathOperator*{\argmin}{arg\,min}
+
+\newcommand{\refthm}[2]{#1~#2}
+
+\title{Notes on Approximate Leave-One-Out for Elastic Net}
+\author{Linyun He \and Wanchao Qin \and Peng Xu \and Yuze Zhou}
+
+\begin{document}
+\maketitle
+
+\section{Approximation in the Primal Domain}
+\subsection{ALO for Linear Regression}
+Recall the objective function for the elastic net problem:
+	\begin{equation}
+	\min_{\bbeta}\frac{1}{2}\sum_{j=1}^{n}(\bx_j^\top\bbeta-y_j)^2+\lambda\left(\alpha\|\bbeta\|_1+\frac{1-\alpha}{2}\|\bbeta\|_2^2\right).
+	\end{equation}
+Let \(A=\{i:\beta_i\not\in K,i=1,\dotsc,p\}\) be the active set, we have \[\dot{\ell}(\bx_j^\top\bbeta\semicol y_j)=\bx_j^\top\bbeta-y_j,\qquad\ddot{\ell}(\bx_j^\top\bbeta\semicol y_j)=1,\qquad\nabla^2 R(\hat{\bbeta}_A)=(1-\alpha)\lambda\bI_{A,A}.\] Thus, \refthm{Eqn.}{31} reduces to
+	\begin{equation}
+	\bH=\bX_{\cdot,A}\left[\bX_{\cdot,A}^\top\bX_{\cdot,A}+\left(1-\alpha\right)\lambda\bI_{A,A}\right]^{-1}\bX_{\cdot,A}^\top.
+	\end{equation}
+By augmenting \(\bX\) with an extra column of \(1\)s, adding the intercept back to the model is straightforward, as \refthm{Eqn.}{31} now becomes 
+	\begin{equation}
+	\bm{H}=\left[\bOne_n,\bm{X}_{\cdot, A}\right]\left\{\left[\bOne_n,\bm{X}_{\cdot, A}\right]^\top\bm{D}\left[\bOne_n,\bm{X}_{\cdot, A}\right]+\nabla^2R\left(\hat{\beta}_0,\hat{\bm{\beta}}_A\right)\right\}^{-1}\left[\bOne_n,\bm{X}_{\cdot, A}\right]^\top,
+	\end{equation}
+where \[\bm{D}=\diag\left[\ddot{\ell}\left(\hat{\beta}_0+\bm{x}_j^\top\hat{\bm{\beta}};y_j\right)\right]_{j\in A}=\bI_{A,A},\qquad\nabla^2R\left(\hat{\beta}_0,\hat{\bm{\beta}}_A\right)=\begin{bmatrix}
+0 & 0 & \dots & 0 \\
+0 & (1-\alpha)\lambda & \dots & 0\\
+\vdots & \vdots & \ddots & \vdots\\
+0 & 0 & \dots & (1-\alpha)\lambda \\
+\end{bmatrix}.\] Then, the ALO can be computed as
+	\begin{equation}
+	\begin{bmatrix}
+	1 & \bm{x}_i^\top\end{bmatrix}
+	\begin{bmatrix}
+	\tilde{\beta}_0^{\setminus i} \\
+	\tilde{\bm{\beta}}^{\setminus i}\end{bmatrix}=(\hat{\beta}_0+\bm{x}_i^\top\hat{\bm{\beta}})+\frac{\bH_{ii}}{1-\bH_{ii}\ddot{\ell}\left(\hat{\beta}_0+\bm{x}_i^\top\hat{\bm{\beta}};y_i\right)}\dot{\ell}\left(\hat{\beta}_0+\bm{x}_i^\top\hat{\bm{\beta}};y_i\right)
+	\end{equation}
+	
+\subsection{ALO for Logistic Regression, Approximation in the Primal Domain}
+For binomial logistic regression, the primal problem is: \[\min_{\bbeta}\sum_{j=1}^{n}\left[\ln\left(1+e^{\bx_j^\top\bbeta}\right)-y_j\bx_j^\top\bbeta\right]+\lambda\left(\alpha\|\bbeta\|_1+\frac{1-\alpha}{2}\|\bbeta\|_2^2\right).\] Let \(A\) be the active set, we have \[\dot{\ell}(\bx_j^\top\bbeta\semicol y_j)=\frac{e^{\bx_j^\top\bbeta}}{1+e^{\bx_j^\top\bbeta}}-y_j,\qquad\ddot{\ell}(\bx_j^\top\bbeta\semicol y_j)=\frac{e^{\bx_j^\top\bbeta}}{\left(1+e^{\bx_j^\top\bbeta}\right)^2},\qquad\nabla^2 R(\hat{\bbeta}_A)=(1-\alpha)\lambda\bI_{A,A}.\] Therefore, the ALO formula is \[\bx_i^\top\tilde{\bbeta}^{\setminus j}\approx\bx_i^\top\hat{\bbeta}+\frac{\bH_{ii}\left(1+e^{\bx_j^\top\hat{\bbeta}}\right)\left[e^{\bx_j^\top\hat{\bbeta}}-y_j\left(1+e^{\bx_j^\top\hat{\bbeta}}\right)\right]}{\left(1+e^{\bx_j^\top\hat{\bbeta}}\right)^2-\bH_{ii}e^{\bx_j^\top\hat{\bbeta}}},\] where \[\bH=\bX_{\cdot,A}\left[\bX_{\cdot,A}^\top\diag\left(\frac{e^{\bx_j^\top\hat{\bbeta}}}{1+2e^{\bx_j^\top\hat{\bbeta}}+e^{2\bx_j^\top\hat{\bbeta}}}\right)\bX_{\cdot,A}+(1-\alpha)\lambda\bI_{A,A}\right]^{-1}\bX_{\cdot,A}^\top.\]
+
+\subsection{ALO for Poisson Regression, Approximation in the Primal Domain}
+For Poisson regression, the primal problem is: \[\min_{\bbeta}\sum_{j=1}^{n}\left(e^{\bx_j^\top\bbeta}-y_j\bx_j^\top\bbeta\right)+\lambda\left(\alpha\|\bbeta\|_1+\frac{1-\alpha}{2}\|\bbeta\|_2^2\right).\] Let \(A\) be the active set, we have \[\dot{\ell}(\bx_j^\top\bbeta\semicol y_j)=e^{\bx_j^\top\bbeta}-y_j,\qquad\ddot{\ell}(\bx_j^\top\bbeta\semicol y_j)=e^{\bx_j^\top\bbeta},\qquad\nabla^2 R(\hat{\bbeta}_A)=(1-\alpha)\lambda\bI_{A,A}.\] Therefore, the ALO formula is \[\bx_i^\top\tilde{\bbeta}^{\setminus j}\approx\bx_i^\top\hat{\bbeta}+\frac{\bH_{ii}\left(e^{\bx_j^\top\hat{\bbeta}}-y_j\right)}{1-\bH_{ii}e^{\bx_j^\top\hat{\bbeta}}},\] where \[\bH=\bX_{\cdot,A}\left[\bX_{\cdot,A}^\top\diag\left(e^{\bx_j^\top\hat{\bbeta}}\right)\bX_{\cdot,A}+(1-\alpha)\lambda\bI_{A,A}\right]^{-1}\bX_{\cdot,A}^\top.\]
+
+\section{Approximation in the Dual Domain}
+\subsection{ALO for Linear Regression}
+First, to write the optimization problem of elastic net in a matrix form, and denote $\bD =[\bm0, \bI]$, the optimization problem becomes: \[\hat{\bbeta} = \argmin\limits_{\bbeta} \frac{1}{2}\|\by-\bX\bbeta\|_{2}^{2} + \lambda_{1}\|\bD\bbeta\|_{1}+\lambda_{2}\|\bD\bbeta\|_{2}^{2}\] The augmented Lagrangian for the problem is: \[L = \frac{1}{2}\|\by-\bz\|_{2}^{2} + \lambda_{1}\|\bm{\omega}\|_{1}+\lambda_{2}\|\bm{\omega}\|_{2}^{2} +\bu^{\top}(\bz-\bX\bbeta) +\bm{v}^{\top}(\bm{\omega}-\bD\bbeta)\] By taking the derivatives with respect to $z$ and $\beta$, we could obtain: \[0 = \frac{\partial L}{\partial \bz} = \bz-\by+\bu,\qquad0 = \frac{\partial L}{\partial \bbeta} = -\bX^{\top}\bu-\bD^{\top}\bv.\]
+Since the first column of $\bX$ is filled with ones and the first column of $D$ is filled with zeros, the first row of $-\bX^{\top}\bu-\bD^{\top}\bv = 0$ gives $\bOne^{\top}\bu = 0$ and due to $\bD = [\bZero,\bI]$, the rest rows give that $-\bX_{j}^{\top}\bu = \bv_{j}$. Moreover, since the rest dimensions of $\omega$ is penalized element-wisely in the augmented Lagrangian, we can minimize over $\omega$ by minimizing over each $\omega_{i}, \quad i \geq 2$, that is, we have to minimize $\lambda_{1}|\omega_{i}| + \lambda_{2}\omega_{i}^{2} - u^{\top}X_{i}\omega_{i}$ for each dimension of $\omega$, where $X_{i}$ denotes the $i$th column of $X$, therefore: \[\min\limits_{\omega_i}\left(\lambda_{1}|\omega_{i}| + \lambda_{2}\omega_{i}^{2} - \bu^{\top}\bX_{i}\omega_i\right)=\begin{dcases}
+0 & |\bu^{\top}\bX_{i}| \leq \lambda_{1},\\
+-\frac{(\lambda_{1}-|\bu^{\top}\bX_{i}|)^{2}}{4\lambda_{2}} & |\bu^{\top}\bX_{i}| > \lambda_{1}.
+\end{dcases}\]
+By taking all the above back to the Lagrangian, we obtain the dual problem as: \[d^{*} = \min\limits_{\bu}\frac{1}{2}\|\by-\bu\|_{2}^{2} + \sum_{j: |\bX_{j}^{\top}\bu| > \lambda_{1}}\frac{(\lambda_{1}-|\bu^{\top}\bX_{i}|)^{2}}{4\lambda_{2}},\qquad\text{subject to }\bOne^\top\bu=0.\]
+
+Denote \[f(\bu) = \sum\limits_{j: |\bX_{j}^{\top}\bu| > \lambda_{1}}\frac{(\lambda_{1}-|\bu^{\top}\bX_{i}|)^{2}}{4\lambda_{2}},\] clearly $f(u)$ is of quadratic form: \[f(\bu) = \frac{1}{2}\bu^{\top}\bA\bu+\ba^{\top}\bu+b,\] where $b$ is a constant and does not matter in the optimization of the dual problem, $\bA$ and $\ba$ are: \[\bA = \frac{1}{2\lambda_{2}}\bX_{\cdot, E}\bX_{\cdot, E}^{\top},\qquad \ba = \frac{\lambda_{1}}{2\lambda_{2}}(\sum\limits_{i:\bX_{i}^{\top}\leq \lambda_{1}}\bX_{i}-\sum\limits_{i:\bX_{i}^{\top}>\lambda_{1}}\bX_{i})\] where \(E\coloneqq\{i: |\bX_{i}^{\top}u| > \lambda \}\).
+
+The dual problem could also be written in a proximal form: \[\hat{\bu} = \prox_{\tilde{f}}(\by),\qquad\quad\tilde{f} = \bI(\bOne^{\top}\bu=0)f(\bu) + \bI(\bOne^{\top}\bu \neq 0)\infty.\] After transforming $f(\bu)$ into a quadratic form, we could write the Lagrangian for the dual problem back again: \[L = \frac{1}{2}\|\by-\bu\|_{2}^{2} + \frac{1}{2}\bu^{\top}\bA\bu+\ba^{\top}\bu+b + \lambda\bOne^{\top}\bu.\] By taking the derivative with respect to $u$, we could obtain: \[\frac{\partial L}{ \partial \bu} =\bu - \by +\bA\bu+\ba+\lambda\bOne = 0\] By shifting the terms, $\bu$ could be written as a formula of $\by$ and $\lambda$: $\bu = (\bI+\bA)^{-1}(\by-\ba-\lambda\bOne)$, by taking the derivative with respect to $\by$ at both sides, we could obtain the Jacobian matrix $\bJ$ of the proximal operator $\prox(\tilde{f})$ at $\by$ as: \[\bJ = (\bI+\bA)^{-1} -(\bI+\bA)^{-1}\bOne\nabla(\hat{\lambda})^{\top}\]
+where $\nabla(\hat{\lambda})^{\top}$ denotes the gradient of $\lambda$ as a function of $\by$.
+By taking $\bu = (\bI+\bA)^{-1}(\by-\ba-\lambda\bOne)$ back to the Lagrangian, the dual problem will become a second-order equation of $\lambda$: 
+\begin{align*}
+d^{*}&= \max\limits_{\lambda} \frac{1}{2}\|\by-(\bI+\bA)^{-1}(\by-\ba-\lambda\bOne)\|_{2}^{2}\\
+&\quad+\frac{1}{2}(\by-\ba-\lambda\bOne)^{\top}(\bI+\bA)^{-1}\bA(\bI+\bA)^{-1}(\by-\ba-\lambda\bOne)+\ba^{\top}(\bI+\bA)^{-1}(\by-\ba-\lambda\bOne)\\
+&\quad+\lambda\bOne^{\top}(\bI+\bA)^{-1}(\by-\ba-\lambda\bOne)
+\end{align*}
+More specifically, the second-order term is: \[\frac{1}{2}\bOne^{\top}(\bI+\bA)^{-2}\bOne+\frac{1}{2}\bOne^{\top}(\bI+\bA)^{-1}\bA(\bI+\bA)^{-1}\bOne-\bOne^{\top}(\bI+\bA)^{-1}\bOne\]
+and the first-order term is: \[2\bOne^{\top}(\bI+\bA)^{-1}(\by-\ba)-\bOne^{\top}(\bI+\bA)^{-2}(\by-\ba)-\bOne^{\top}(\bI+\bA)^{-1}\bA(\bI+\bA)^{-1}(\by-\ba)\] Thus by solving the second-order equation, we could obtain \[\hat{\lambda} = \frac{2\bOne^{\top}(\bI+\bA)^{-1}(\by-\ba)-\bOne^{\top}(\bI+\bA)^{-2}(\by-\ba)-\bOne^{\top}(\bI+\bA)^{-1}\bA(\bI+\bA)^{-1}(\by-\ba)}{\bOne^{\top}(\bI+\bA)^{-2}\bOne+\bOne^{\top}(\bI+\bA)^{-1}\bA(\bI+\bA)^{-1}\bOne-2\bOne^{\top}(\bI+\bA)^{-1}\bOne}\]
+and the gradient \[\nabla(\hat{\lambda}) = \frac{2(\bI+\bA)^{-1}\bOne-(\bI+\bA)^{-2}\bOne-(\bI+\bA)^{-1}\bA(\bI+\bA)^{-1}\bOne}{\bOne^{\top}(\bI+\bA)^{-2}\bOne+\bOne^{\top}(\bI+\bA)^{-1}\bA(\bI+\bA)^{-1}\bOne-2\bOne^{\top}(\bI+\bA)^{-1}\bOne}\]
+By taking the gradient back to \[\bJ = (\bI+\bA)^{-1} -(\bI+\bA)^{-1}\bOne\nabla(\hat{\lambda})^{\top} = (\bI+\bA)^{-1} -\frac{(\bI+\bA)^{-1}\bOne\bOne^{\top}(\bI+\bA)^{-1}}{\bOne^{\top}(\bI+\bA)^{-1}\bOne},\] we could obtain the Jacobian.
+
+\subsection{Proof of the Equivalence between the primal and the dual solutions}
+First recall the ALO formula from the dual approach \[\by^{/i} = \by_{i}-\frac{\bu_{i}}{\bJ_{ii}} = \frac{\bJ_{ii}-1}{\bJ_{ii}}\by_{i}+\frac{1}{\bJ_{ii}}\bx_{i}\hat{\bbeta}\] and the primal formula from the primal approach \[\by^{/i} = \bx_{i}\hat{\beta} + \frac{\bH_{ii}}{1-\bH_{ii}}(\bx_{i}\hat{\bbeta}-\by_{i}) = -\frac{\bH_{ii}}{1-\bH_{ii}}\by_{i}+\frac{1}{1-\bH_{ii}}\bx_{i}\hat{\bbeta}.\] In this section, we're going to show that $\bH+\bJ =\bI$, thus giving $\bH_{ii}+\bJ_{ii} = 1$, and that the solutions given by both the primal and the dual approach are equivalent.
+
+First, using matrix inverse lemma, we could calculate the inverse of $(\bI+\bA) = (\bI+\frac{1}{2\lambda_{2}}\bX_{\cdot, E}\bX_{\cdot, E}^{\top})$ as: \[(\bI+\bA)^{-1}= (\bI+\frac{1}{2\lambda_{2}}\bX_{\cdot, E}\bX_{\cdot, E}^{\top})^{-1}= \bI - \bX_{\cdot, E}(2\lambda_{2}\bI+\bX_{\cdot, E}^{\top}\bX_{\cdot, E})^{-1}\bX_{\cdot, E}^{\top},\] 
+therefore the matrix $\bJ$ is:
+\begin{align*}
+\bJ &= (\bI+\bA)^{-1} -\frac{(\bI+\bA)^{-1}\bOne\bOne^{\top}(\bI+\bA)^{-1}}{\bOne^{\top}(\bI+\bA)^{-1}\bOne}\\
+&= \bI - \bX_{\cdot, E}(2\lambda_{2}\bI+\bX_{\cdot, E}^{\top}\bX_{\cdot, E})^{-1}\bX_{\cdot, E}^{\top}\\
+&\quad- \frac{(\bOne-\bX_{\cdot, E}(2\lambda_{2}\bI+\bX_{\cdot, E}^{\top}\bX_{\cdot, E})^{-1}\bX_{\cdot, E}^{\top}\bOne)(\bOne^{\top}-\bOne^{\top}\bX_{\cdot, E}(2\lambda_{2}\bI+\bX_{\cdot, E}^{\top}\bX_{\cdot, E})^{-1}\bX_{\cdot, E}^{\top})}{\bOne^{\top}(\bI-\bX_{\cdot, E}(2\lambda_{2}\bI+\bX_{\cdot, E}^{\top}\bX_{\cdot, E})^{-1}\bX_{\cdot, E}^{\top})\bOne}
+\end{align*}
+
+Now recall that \[\bH = [\bOne,\bX_{\cdot, E}]([\bOne,\bX_{\cdot, E}]^{\top}[\bOne,\bX_{\cdot, E}]+\diag[0,2\lambda_{2},\cdots, 2\lambda_{2}])[\bOne,\bX_{\cdot, E}]^{\top},\] by adopting block inverse, we could derive $\bH$ as:
+\begin{align*}
+\bH &= [1,\bX_{\cdot, E}]
+\begin{pmatrix}
+n & \bOne^{\top}\bX_{\cdot, E}\\
+\bX_{\cdot, E}^{\top}\bOne & \bX_{\cdot, E}^{\top}\bX_{\cdot, E} + 2\lambda_{2}\bI\\
+\end{pmatrix}[1,\bX_{\cdot, E}]^{\top}\\
+&= [1,\bX_{\cdot, E}]
+\begin{pmatrix}
+\frac{1}{\bOne^{\top}(\bI-\bX_{\cdot, E}(2\lambda_{2}\bI+\bX_{\cdot, E}^{\top}\bX_{\cdot, E})^{-1}\bX_{\cdot, E}^{\top})\bOne} & \frac{-\bOne^{\top}\bX_{\cdot, E}(2\lambda_{2}\bI+\bX_{\cdot, E}^{\top}\bX_{\cdot, E})^{-1}}{\bOne^{\top}(\bI-\bX_{\cdot, E}(2\lambda_{2}\bI+\bX_{\cdot, E}^{\top}\bX_{\cdot, E})^{-1}\bX_{\cdot, E}^{\top})\bOne}\\
+\frac{-(2\lambda_{2}\bI+\bX_{\cdot, E}^{\top}\bX_{\cdot, E})^{-1}\bX_{\cdot, E}^{\top}\bOne}{\bOne^{\top}(\bI-\bX_{\cdot, E}(2\lambda_{2}\bI+\bX_{\cdot, E}^{\top}\bX_{\cdot, E})^{-1}\bX_{\cdot, E}^{\top})\bOne}&(2\lambda_{2}\bI+\bX_{\cdot, E}^{\top}\bX_{\cdot, E})^{-1}+\frac{(2\lambda_{2}\bI+\bX_{\cdot, E}^{\top}\bX_{\cdot, E})^{-1}\bX_{\cdot, E}^{\top}\bOne\bOne^{\top}\bX_{\cdot, E}(2\lambda_{2}\bI+\bX_{\cdot, E}^{\top}\bX_{\cdot, E})^{-1}}{\bOne^{\top}(\bI-\bX_{\cdot, E}(2\lambda_{2}\bI+\bX_{\cdot, E}^{\top}\bX_{\cdot, E})^{-1}\bX_{\cdot, E}^{\top})\bOne}\\
+\end{pmatrix}\\
+&\quad\times[1,\bX_{\cdot, E}]^{\top}\\
+& = \bX_{\cdot, E}(2\lambda_{2}\bI+\bX_{\cdot, E}^{\top}\bX_{\cdot, E})^{-1}\bX_{\cdot, E}^{\top}\\
+&\quad+\frac{(\bOne-\bX_{\cdot, E}(2\lambda_{2}\bI+\bX_{\cdot, E}^{\top}\bX_{\cdot, E})^{-1}\bX_{\cdot, E}^{\top}\bOne)(\bOne^{\top}-\bOne^{\top}\bX_{\cdot, E}(2\lambda_{2}\bI+\bX_{\cdot, E}^{\top}\bX_{\cdot, E})^{-1}\bX_{\cdot, E}^{\top})}{\bOne^{\top}(\bI-\bX_{\cdot, E}(2\lambda_{2}\bI+\bX_{\cdot, E}^{\top}\bX_{\cdot, E})^{-1}\bX_{\cdot, E}^{\top})\bOne}\\
+& = \bI-\bJ
+\end{align*}
+Now that we have showed that $\bH+\bJ=\bI$, we could also conclude that $\bJ_{ii}+\bH_{ii}=1$ and that the ALO solutions given by both the primal and dual approaches are equivalent.
+
+\subsection{ALO for Logistic Regression with Lasso penalty}
+First, let's rewrite the optimization problem with the loss functions separated for each observation, therefore the loss function goes: \[-\sum_{i=1}^n\left[y_{i}\bx_{i}^{\top}\bbeta+\ln\left(1+e^{\bx_{i}^{\top}\bbeta}\right)\right]+\lambda_{1}\|\bbeta\|_{1},\]
+where the individual loss function is $\ell(x_{i}^{\top}\bbeta ;y_{i}) = y_{i}x_{i}^{\top}\bbeta+\ln(1+e^{\bx_{i}^{\top}\bbeta})$ and the regularizer is $R(\bbeta) = \lambda_{1}\|\bbeta\|_{1}$, from which we could derive the dual optimal and the conjugate functions: \[\hat{\btheta} = y - \frac{e^{\bX\hat{\bbeta}}}{1+e^{\bX\hat{\bbeta}}},\qquad \ell^{*}(-\theta_{i};y_{i})=(y_{i}-\theta_{i})\ln\frac{y_{i}-\theta_{i}}{1-(y_{i}-\theta_{i})}-\ln\frac{1}{1-(y_{i}-\theta_{i})},\qquad R^{*}(\bbeta) =\begin{dcases}
+0 & \|\bbeta\|_{\infty} \leq \lambda_{1},\\
+\infty & \text{otherwise}.\\
+\end{dcases}\]
+
+From the results of the conjugate functions above, we could also obtain the derivatives of the loss functions and the Jacobian of the regularizer: \[\dot{\ell}^{*}(-\theta_{i};y_{i}) = \ln \frac{y_{i}-\theta_{i}}{1-(y_{i}-\theta_{i})},\qquad \ddot{\ell}^{*}(-\theta_{i};y_{i}) = \frac{1}{(y_{i}-\theta_{i})[1-(y_{i}-\theta_{i})]}\]
+
+Recall \refthm{Eqn.}{20} from the main paper, the quadratic surrogate of the dual problem is \[\min\limits_{\bu} \frac{1}{2}\sum_{i=1}^n\left(u_{i}-\frac{\hat{\theta}_{i}\ddot{\ell}^{*}(-\hat{\theta}_{i};y_{i})+\hat{y}_{i}}{\sqrt{\ddot{\ell}^{*}(-\hat{\theta}_{i};y_{i})}}\right)^{2}+R^{*}(X^{\top}Ku),\] where $\bK=\diag\sqrt{\ddot{\ell}^{*}(-\hat{\theta}_{i};y_{i})}$. Therefore the Jacobian at $\by_{u} =\hat{\theta}_{i}\ddot{\ell}^{*}(-\hat{\theta}_{i};y_{i})+\hat{\theta}_{i}/\sqrt{\ddot{\ell}^{*}(-\hat{\theta}_{i};y_{i})}$ could locally be treated as the projection onto the orthogonal complement of the polyhedron $\{\|\bX^{\top}K\bu\|_{\infty} \leq \lambda_{1}\}$, thus $\bJ = \bI - \bX_{u,E}(\bX_{u,E}^{\top}\bX_{u,E})^{-1}\bX_{u,E}$, where $\bX_{u,E}$ are the columns of $\bX_{u}=\bX^{\top}\bK$, such that the columns in the set $E = \{i:|\bX_{i}^{\top}\btheta| = \lambda_{1}\}$ are selected. Take everything to \refthm{Eqn.}{22}, $y^{/i} = \bK_{ii}(y_{u,i}-\bK_{ii}\hat{\theta}_{i}/\bJ_{ii})$, we could obtain the ALO for the $i$-th observation.
+
+\subsection{ALO for Logistic Regression with Elastic Net Penalty}
+The optimization problem for logistic regression with elastic net penalty is: \[-\sum_{i=1}^n\left[y_{i}x_{i}^{\top}\bbeta+\ln\left(1+e^{\bx_{i}^{\top}\bbeta}\right)\right]+\lambda_{1}\|\bbeta\|_{1}+\lambda_{2}\|\bbeta\|_{2}^{2}.\]
+The optimization problem is the same except the regularizer is changed, therefore the only thing different is the conjugate function of the regularizer, $R^{*}$ and the corresponding Jacobian, here $R(\bbeta) = \lambda_{1}\|\bbeta\|_{1}+\lambda_{2}\|\bbeta\|_{2}^{2}$: \[R^{*}(\bbeta) = \sum\limits_{|u_{i}| > \lambda_{1}} \frac{(\lambda_{1}-|u_{i}|)^{2}}{4\lambda_{2}}.\] The corresponding Jacobian is $\bJ = (\bI +\bX_{u,E}\bX_{u,E}^{\top}/2\lambda_{2})$, where $\bX_{u,E}$ are the columns of $\bX_{u}=\bX^{\top}\bK$, such that the columns in the set $E = \{i:|\bX_{i}^{\top}\btheta| = \lambda_{1}\}$ are selected. Take everything to \refthm{Eqn.}{22}, $y^{/i} = \bK_{ii}(y_{u,i}-\bK_{ii}\hat{\theta}_{i}/\bJ_{ii})$, we could obtain the ALO for the $i$-th observation.
+
+\subsection{ALO for Poisson Regression with Lasso penalty}
+The optimization function for Poisson regression with lasso penalty is: \[\sum_{i=1}^n\left[-y_{i}\bx_{i}^{\top}\bbeta+e^{\bx_{i}^{\top}\bbeta}+\ln(y_{i}!)\right] + \lambda_{1}\|\bbeta\|_{1}\] The regularizer is the same as the logistic regression with the lasso penalty case, thus the Jacobian will also be the same, therefore we only have to focus on the loss function $\ell(x_{i}^{\top}\bbeta ; y_{i}) = -y_{i}x_{i}^{\top}\bbeta+e^{x_{i}^{\top}\bbeta}+\ln(y_{i}!)$. The optimal solution for the dual problem $\hat{\theta} = y - e^{\bX\hat{\bbeta}}$ and the conjugate of the loss function is $\ell^{*}(-\theta_{i};y_{i}) = (y_{i}-\theta_{i})\ln(y_{i}-\theta_{i})-(y_{i}-\theta_{i})$, the corresponding derivatives are therefore: \[\dot{\ell}^{*}(-\theta_{i};y_{i}) = \ln(y_{i}-\theta_{i}),\qquad\ddot{\ell}^{*}(-\theta_{i};y_{i}) = \frac{1}{y_{i}-\theta_{i}}.\] By plugging everything into \refthm{Eqn.}{22}, we obtain the ALO for Poisson regression with the lasso penalty.
+
+\subsection{ALO for Poisson Regression with Elastic Net Penalty}
+The loss function for Poisson regression with elastic net penalty is the same as that of Poisson regression with the lasso penalty and the regularizer of it is the same as that of logistic regression with elastic net penalty. Thus by plugging everything into \refthm{Eqn.}{22}, we could obtain the ALO for Poisson regression with elastic net penalty.
+
+\section{Approximation with Proximal Formulation}
+\subsection{ALO for Linear Regression}
+For the elastic net problem, the proximal mapping is known to be
+	\begin{equation}
+	\bprox_R\left(\bz\right)=\gamma\sign(\bz)\odot(|\bz|-\lambda\bOne_p)_+,\qquad\gamma=\frac{1}{1+(1-\alpha)\lambda}.
+	\end{equation}
+Let \(E\) be the active set, if \(z_i\in E\), then \[\frac{\partial}{\partial z_i}\gamma\sign(z_i)(|z_i|-\lambda)_+=\gamma.\] Plug in \(\bz=\hat{\bbeta}-\sum_{j=1}^{n}\dot{\ell}(\bx_j^\top\hat{\bbeta}\semicol y_j)\bx_j\), \refthm{Eqn.}{46} thus reduce to 
+	\begin{equation}
+	\bH=\gamma\bX_{\cdot,E}\left[\gamma\bX_{\cdot,E}^\top\bX_{\cdot,E}+\left(1-\gamma\right)\bI_{E,E}\right]^{-1}\bX_{\cdot,E}^\top.
+	\end{equation}
+Bringing back the intercept term is straightforward as well. Noted that \[\begin{bmatrix}
+\hat{\bbeta}_0^{\setminus i} \\
+\hat{\bm{\bbeta}}^{\setminus i}\end{bmatrix}=
+\bprox_{R}\left(\bz\right),\qquad\bz=\begin{bmatrix}
+\hat{\bbeta}_0^{\setminus i} \\
+\hat{\bm{\bbeta}}^{\setminus i}\end{bmatrix}-
+\sum_{j\neq i}\begin{bmatrix}
+1 \\
+\bm{x}_j\end{bmatrix}
+\dot{\ell}\left(\hat{\bbeta}_0^{\setminus i}+\bm{x}_j^\top\hat{\bm{\bbeta}}^{\setminus i};y_j\right).\] Hence, from the first-order condition \(\sum_{j\neq i}\dot{\ell}\left(\hat{\bbeta}_0^{\setminus i}+\bm{x}_j^\top\hat{\bm{\bbeta}}^{\setminus i};y_j\right)=0\), we can derive that 
+	\begin{equation}
+	\bm{J}_{E,E}=
+	\left[\bm{J}(\bm{u})\right]_{E,E}=
+	\begin{bmatrix}
+	1 & 0 & 0 & \dots & 0\\
+	0 & (1-\alpha)\lambda & 0 & \dots & 0\\
+	0 & 0 & (1-\alpha)\lambda & \dots & 0\\
+	\vdots & \vdots & \vdots & \ddots & \vdots\\
+	0 & 0 & 0 & 0 & (1-\alpha)\lambda\\
+	\end{bmatrix}^{-1}.
+	\end{equation}
+The ALO formula is then immediate by \refthm{Thm.}{5.1}.
+
+\subsection{ALO for LASSO, with Intercept through Generalized LASSO}
+For the generalized LASSO:
+	\begin{equation}
+	\min\limits_{\bbeta}\frac{1}{2}\|\by-\bX\bbeta\|+\lambda\|\bD\bbeta\|_{1},
+	\end{equation}
+the dual problem can be derived as:
+	\begin{equation}
+	\min\limits_{\bu}\frac{1}{2}\|\by-\btheta\|_{2}^{2},\qquad\btheta\in \{\bX^{\top}\btheta = \bD^{\top}\bu, \|\bu\|_{\infty} \leq \lambda\}.
+	\end{equation}
+The dual problem could be written in a proximal approach, such that: \[\hat{\bu} = \bprox_{R}(\by),\qquad R(\bu) =\begin{dcases}
+0 & \btheta \in \{\bX^{\top}\btheta = \bD^{\top}\bu, \|\bu\|_{\infty} \leq \lambda\},\\
+\infty & \text{otherwise.}
+\end{dcases}\] Denote $\bJ$ as the Jacobian of the proximal operator at the full data problem $\by$, then the ALO estimator could be obtained as: 
+	\begin{equation}
+	\by^{\setminus i} = \by_{i} - \frac{\hat{\bu}_{i}}{\bJ_{ii}}.
+	\end{equation}
+For the case of LASSO with an intercept, we could expand the $\bX$ with a column of ones in the first column, expand $\bbeta$ with another dimension and choose $\bD = [\bZero, \bI]$. Let \(E\coloneqq\{j:|\bX_{j}^{\top}\btheta| = \lambda \}\) denote the active set. The Jacobian is locally given as the projection onto the orthogonal complement of the span of $\bX_{E}$ and the vector of ones. Further denote $\tilde{\bX}_{E} = [\bOne, \bX_{E}]$, then the Jacobian is given as $\bI - \tilde{\bX_{E}}(\tilde{\bX}_{E}^{\top}\tilde{\bX}_{E})\tilde{\bX}_{E}^{\top}$.
+
+\subsection{ALO for Elastic Net, without Penalty on Intercept through Generalized LASSO}
+Without penalty on intercept, the elastic net problem can be written as:
+\begin{align*}
+\begin{bmatrix}
+\hat{\bbeta}_0 \\
+\hat{\bbeta}
+\end{bmatrix} &= \argmin\frac{1}{2} \left\|\by - \beta_0 - \bX\bbeta\right\|_2^2 + \lambda_1 \|\bbeta\|_1 + \lambda_2 \|\bbeta\|_2^2 \\
+&= \argmin\frac{1}{2} 
+\begin{bmatrix}
+\beta_0 \\
+\bbeta
+\end{bmatrix}^\top \left(
+\begin{bmatrix}
+1 & \bX
+\end{bmatrix}^\top
+\begin{bmatrix}
+1 & \bX
+\end{bmatrix} + 
+\lambda_2 \diag(0; \bOne_p)
+\right)
+\begin{bmatrix} 
+\beta_0 \\
+\bbeta
+\end{bmatrix} - \by^\top
+\begin{bmatrix}
+1 & \bX
+\end{bmatrix} 
+\begin{bmatrix}
+\beta_0 \\
+\bbeta
+\end{bmatrix}   + \lambda_1 \|\bbeta\|_1
+\end{align*}
+where we assume that the size of $\bX$ is $n \times p$. In the mean time, note the LASSO problem (also without penalty on intercept) is:
+\begin{align*}
+\begin{bmatrix}
+\hat{\bbeta}_0 \\
+\hat{\bbeta}
+\end{bmatrix} &= \argmin\frac{1}{2} \left\|\by - \beta_0 - \bX\bbeta\right\|_2^2 + \lambda_1 \|\bbeta\|_1 \\
+&= \argmin\frac{1}{2} 
+\begin{bmatrix}
+\beta_0 \\
+\bbeta
+\end{bmatrix}^\top 
+\begin{bmatrix}
+\bOne & \bX
+\end{bmatrix}^\top
+\begin{bmatrix}
+\bOne & \bX
+\end{bmatrix} 
+\begin{bmatrix} 
+\beta_0 \\
+\bbeta
+\end{bmatrix} - \by^\top
+\begin{bmatrix}
+\bOne & \bX
+\end{bmatrix} 
+\begin{bmatrix}
+\beta_0 \\
+\bbeta
+\end{bmatrix} +  \lambda_1 \|\bbeta\|_1
+\end{align*}
+Thus we can add some ``observations'' to the data and let
+$$\by^\ast = \begin{bmatrix}
+\by \\
+\bm0_p
+\end{bmatrix},\qquad \bX^\ast =
+\begin{bmatrix}
+\bX \\
+\sqrt{\lambda_2} \bm{I}_p
+\end{bmatrix}, $$
+then the elastic net becomes
+	\begin{equation}
+		\begin{aligned}
+		\begin{bmatrix}
+		\hat{\bbeta}_0 \\
+		\hat{\bbeta}
+		\end{bmatrix} &= \argmin\frac{1}{2} \left\|\by^\ast - \bbeta_0
+		\begin{bmatrix}
+		\bOne_n \\
+		\bZero_p
+		\end{bmatrix} - \bX^\ast\bbeta\right\|_2^2 + \lambda_1 \|\bbeta\|_1  \\
+		&= \argmin\frac{1}{2} \left\|
+		\begin{bmatrix}
+		\by \\
+		\bm0_p
+		\end{bmatrix}
+		- 
+		\begin{bmatrix}
+		\bOne_n & \bX \\
+		\bZero_p &\sqrt{\lambda_2} \bm{I}_p
+		\end{bmatrix}  
+		\begin{bmatrix}
+		\bbeta_0 \\
+		\bbeta
+		\end{bmatrix} 
+		\right \|_2^2 + \lambda_1 \|\bbeta\|_1,
+		\end{aligned}
+	\end{equation}
+which is a special case of the general LASSO.
+
+\section{Derivation for Multinomial ALO}
+\subsection{Loss Function}
+Assume we have $K$ classes, $n$ observations $\bX$, and $\bm{R}^p$ parameters $\bm{\beta}_{k}$ for each class. Define leave-\(i\)-out variables as 
+\[\by_{(n-1)K\times 1}^{\setminus i}=\{y_{jk}\}_{j\neq i}^{k=1,...,K}=
+\begin{bmatrix}
+\begin{bmatrix}
+y_{11} \\
+y_{12} \\
+\vdots \\
+y_{1K} \\
+\end{bmatrix} \\
+\begin{bmatrix}
+y_{21} \\
+y_{22} \\
+\vdots \\
+y_{2K} \\
+\end{bmatrix} \\
+\vdots \\
+\begin{bmatrix}
+y_{n1} \\
+y_{n2} \\
+\vdots \\
+y_{nK} \\
+\end{bmatrix} \\
+\end{bmatrix},\ \ 
+\bm{\mathcal{X}}_{(n-1)K\times pK}^{\setminus i}=\begin{bmatrix}
+\begin{bmatrix}
+\bX_1^\top & 0 & \cdots & 0 \\
+0 & \bX_1^\top & \cdots & 0 \\
+\vdots & \vdots & \ddots & \vdots \\
+0 & 0 & \cdots & \bX_1^\top \\
+\end{bmatrix} \\
+\begin{bmatrix}
+\bX_2^\top & 0 & \cdots & 0 \\
+0 & \bX_2^\top & \cdots & 0 \\
+\vdots & \vdots & \ddots & \vdots \\
+0 & 0 & \cdots & \bX_2^\top \\
+\end{bmatrix} \\
+\vdots \\
+\begin{bmatrix}
+\bX_n^\top & 0 & \cdots & 0 \\
+0 & \bX_n^\top & \cdots & 0 \\
+\vdots & \vdots & \ddots & \vdots \\
+0 & 0 & \cdots & \bX_n^\top \\
+\end{bmatrix} \\
+\end{bmatrix},\ \ 
+\bm{\mathcal{B}}=\begin{bmatrix}
+\bbeta_{1} \\
+\bbeta_{2} \\
+\vdots \\
+\bbeta_{K} \\
+\end{bmatrix}\]
+
+The loss function would be 
+\[\ell(\bm{\mathcal{B}})=-\left\{\sum_{j\neq i}\left[\sum_{k=1}^K
+y_{jk}\bX_j^\top\bbeta_k-
+\log\left(\sum_{k=1}^Ke^{\bX_j^\top\bbeta_k}\right)
+\right]\right\}=\sum_{j\neq i}\log\left(\sum_{k=1}^Ke^{\bX_j^\top\bbeta_k}\right)-
+\sum_{j\neq i}^n\sum_{k=1}^Ky_{jk}\bX_j^\top\bbeta_k\]
+
+By taking the first order derivative, we get
+$$\begin{aligned}
+\frac{\partial \ell(\bm{\mathcal{B}})}{\partial\bm{\mathcal{B}}}=&
+\begin{bmatrix}
+\frac{\partial \ell(\bm{\mathcal{B}})}{\partial\bbeta_{1}} \\
+\vdots \\
+\frac{\partial \ell(\bm{\mathcal{B}})}{\partial\bbeta_{K}} \\
+\end{bmatrix}=
+\begin{bmatrix}
+\sum_{j\neq i}\frac{\exp\left(\bX_j^\top\bbeta_1\right)}{\sum_{k=1}^K\exp\left(\bX_j^\top\bbeta_k\right)}\bX_j-
+\sum_{j\neq i}y_{j1}\bX_j \\
+\vdots \\
+\sum_{j\neq i}\frac{\exp\left(\bX_j^\top\bbeta_K\right)}{\sum_{k=1}^K\exp\left(\bX_j^\top\bbeta_k\right)}\bX_j-
+\sum_{j\neq i}y_{jK}\bX_j \\
+\end{bmatrix} 
+=\bm{\mathcal{X}}^{/iT}\begin{bmatrix}
+\begin{bmatrix}\frac{\exp\left(\bX_1^\top\bbeta_1\right)}{\sum_{k=1}^K\exp\left(\bX_1^\top\bbeta_k\right)} \\
+\vdots \\
+\frac{\exp\left(\bX_1^\top\bbeta_K\right)}{\sum_{k=1}^K\exp\left(\bX_1^\top\bbeta_k\right)} \\
+\end{bmatrix} \\
+\begin{bmatrix}
+\frac{\exp\left(\bX_2^\top\bbeta_1\right)}{\sum_{k=1}^K\exp\left(\bX_2^\top\bbeta_k\right)} \\
+\vdots \\
+\frac{\exp\left(\bX_2^\top\bbeta_K\right)}{\sum_{k=1}^K\exp\left(\bX_2^\top\bbeta_k\right)} \\
+\end{bmatrix} \\
+\vdots \\
+\begin{bmatrix}
+\frac{\exp\left(\bX_n^\top\bbeta_1\right)}{\sum_{k=1}^K\exp\left(\bX_n^\top\bbeta_k\right)} \\
+\vdots \\
+\frac{\exp\left(\bX_n^\top\bbeta_K\right)}{\sum_{k=1}^K\exp\left(\bX_n^\top\bbeta_k\right)} \\
+\end{bmatrix} \\
+\end{bmatrix}_{(n-1)K\times1}-\bm{\mathcal{X}}^{/iT}\by^{/i} \\
+=&\bm{\mathcal{X}}^{/iT}\left[\bm{\mathcal{A}}^{/i}(\bbeta)-\by^{/i}\right]=\bm{\mathcal{X}}^{/iT}\left(
+\begin{bmatrix}
+\bm{A}_1(\bbeta) \\
+\bm{A}_2(\bbeta) \\
+\vdots \\
+\bm{A}_n(\bbeta)
+\end{bmatrix}-\by^{/i}\right)
+\end{aligned}$$
+\\
+
+Similarly, we can get
+$$\frac{\partial^2\ell(\bm{\mathcal{B}})}{\partial\bm{\mathcal{B}}\partial\bm{\mathcal{B}}^\top}=\bm{\mathcal{X}}^{/iT}\frac{\partial \bm{\mathcal{A}}^{/i}(\bm{\mathcal{B}})}{\partial\bm{\mathcal{B}}^\top}=
+\bm{\mathcal{X}}^{/iT}\begin{bmatrix}
+\frac{\partial \bm{A}_1(\bm{\mathcal{B}})}{\partial\bm{\mathcal{B}}^\top} \\
+\frac{\partial \bm{A}_2(\bm{\mathcal{B}})}{\partial\bm{\mathcal{B}}^\top} \\
+\vdots \\
+\frac{\partial \bm{A}_n(\bm{\mathcal{B}})}{\partial\bm{\mathcal{B}}^\top} \\
+\end{bmatrix}$$
+where,
+$$\begin{aligned}\frac{\partial \bm{A}_j(\bm{\mathcal{B}})}{\partial\bm{\mathcal{B}}^\top}=&
+\begin{bmatrix}
+\frac{\exp\left(\bX_j^\top\bbeta_1\right)}{\sum_{k=1}^K\exp\left(\bX_j^\top\bbeta_k\right)} & 0 & \cdots & 0 \\
+0 & \frac{\exp\left(\bX_j^\top\bbeta_2\right)}{\sum_{k=1}^K\exp\left(\bX_j^\top\bbeta_k\right)} & \cdots & 0 \\
+\vdots & \vdots & \ddots & \vdots \\
+0 & 0 & \cdots &  \frac{\exp\left(\bX_j^\top\bbeta_K\right)}{\sum_{k=1}^K\exp\left(\bX_j^\top\bbeta_k\right)}
+\end{bmatrix}_{K\times K}
+\begin{bmatrix}
+\bX_j^\top & 0 & \cdots & 0 \\
+0 & \bX_j^\top & \cdots & 0 \\
+\vdots & \vdots & \ddots & \vdots \\
+0 & 0 & \cdots & \bX_j^\top \\
+\end{bmatrix}_{K\times pK} \\
+&-\begin{bmatrix}
+\frac{\exp\left(\bX_j^\top\bbeta_1\right)}{\sum_{k=1}^K\exp\left(\bX_j^\top\bbeta_k\right)} \\
+\frac{\exp\left(\bX_j^\top\bbeta_2\right)}{\sum_{k=1}^K\exp\left(\bX_j^\top\bbeta_k\right)} \\
+\vdots \\
+\frac{\exp\left(\bX_j^\top\bbeta_K\right)}{\sum_{k=1}^K\exp\left(\bX_j^\top\bbeta_k\right)}
+\end{bmatrix}_{K\times 1}
+\begin{bmatrix}
+\frac{\exp\left(\bX_j^\top\bbeta_1\right)}{\sum_{k=1}^K\exp\left(\bX_j^\top\bbeta_k\right)} &
+\frac{\exp\left(\bX_j^\top\bbeta_2\right)}{\sum_{k=1}^K\exp\left(\bm{x}_j^\top\bbeta_k\right)} &
+\cdots &
+\frac{\exp\left(\bm{x}_j^\top\bbeta_K\right)}{\sum_{k=1}^K\exp\left(\bm{x}_j^\top\bbeta_k\right)}
+\end{bmatrix}_{1\times K}
+\begin{bmatrix}
+\bm{x}_j^\top & 0 & \cdots & 0 \\
+0 & \bm{x}_j^\top & \cdots & 0 \\
+\vdots & \vdots & \ddots & \vdots \\
+0 & 0 & \cdots & \bm{x}_j^\top \\
+\end{bmatrix}_{K\times pK} \\
+=&\left[{\rm diag}\left(\bm{A}_j(\bm{\mathcal{B}})\right)-\bm{A}_j(\bm{\mathcal{B}})\bm{A}_j(\bm{\mathcal{B}})^\top\right]_{K\times K}
+\begin{bmatrix}
+\bm{x}_j^\top & 0 & \cdots & 0 \\
+0 & \bm{x}_j^\top & \cdots & 0 \\
+\vdots & \vdots & \ddots & \vdots \\
+0 & 0 & \cdots & \bm{x}_j^\top \\
+\end{bmatrix}_{K\times pK} \\
+\end{aligned}$$
+
+So, we have
+$$\begin{aligned}
+\frac{\partial^2\ell(\bm{\mathcal{B}})}{\partial\bm{\mathcal{B}}\partial\bm{\mathcal{B}}^\top}=&\bm{\mathcal{X}}^{/iT}\frac{\partial \bm{\mathcal{A}}^{/i}(\bm{\mathcal{B}})}{\partial\bm{\mathcal{B}}^\top}=
+\bm{\mathcal{X}}^{/iT}\begin{bmatrix}
+\frac{\partial \bm{A}_1(\bm{\mathcal{B}})}{\partial\bm{\mathcal{B}}^\top} \\
+\frac{\partial \bm{A}_2(\bm{\mathcal{B}})}{\partial\bm{\mathcal{B}}^\top} \\
+\vdots \\
+\frac{\partial \bm{A}_n(\bm{\mathcal{B}})}{\partial\bm{\mathcal{B}}^\top} \\
+\end{bmatrix} \\
+=&\bm{\mathcal{X}}^{/iT}
+\begin{bmatrix}
+\left[{\rm diag}\left(\bm{A}_1(\bm{\mathcal{B}})\right)-\bm{A}_1(\bm{\mathcal{B}})\bm{A}_1(\bm{\mathcal{B}})^\top\right]_{K\times K}
+\begin{bmatrix}
+\bm{x}_1^\top & 0 & \cdots & 0 \\
+0 & \bm{x}_1^\top & \cdots & 0 \\
+\vdots & \vdots & \ddots & \vdots \\
+0 & 0 & \cdots & \bm{x}_1^\top \\
+\end{bmatrix}_{K\times pK} \\
+\left[{\rm diag}\left(\bm{A}_2(\bm{\mathcal{B}})\right)-\bm{A}_2(\bm{\mathcal{B}})\bm{A}_2(\bm{\mathcal{B}})^\top\right]_{K\times K}
+\begin{bmatrix}
+\bm{x}_2^\top & 0 & \cdots & 0 \\
+0 & \bm{x}_2^\top & \cdots & 0 \\
+\vdots & \vdots & \ddots & \vdots \\
+0 & 0 & \cdots & \bm{x}_2^\top \\
+\end{bmatrix}_{K\times pK} \\
+\vdots \\
+\left[{\rm diag}\left(\bm{A}_n(\bm{\mathcal{B}})\right)-\bm{A}_n(\bm{\mathcal{B}})\bm{A}_n(\bm{\mathcal{B}})^\top\right]_{K\times K}
+\begin{bmatrix}
+\bm{x}_n^\top & 0 & \cdots & 0 \\
+0 & \bm{x}_n^\top & \cdots & 0 \\
+\vdots & \vdots & \ddots & \vdots \\
+0 & 0 & \cdots & \bm{x}_n^\top \\
+\end{bmatrix}_{K\times pK} \\
+\end{bmatrix}_{(n-1)K\times pK} \\
+=&\bm{\mathcal{X}}^{/iT}
+\bm{\mathcal{D}}_{(n-1)K\times (n-1)K}^{/i}(\bm{\mathcal{B}})\bm{\mathcal{X}}^{/i} \\
+\end{aligned}$$
+
+where,
+$$\bm{\mathcal{D}}^{/i}(\bm{\mathcal{B}})=\begin{bmatrix}
+\left[{\rm diag}\left(\bm{A}_1(\bm{\mathcal{B}})\right)-\bm{A}_1(\bm{\mathcal{B}})\bm{A}_1(\bm{\mathcal{B}})^\top\right] & \cdots & 0 \\
+\vdots & \ddots & \vdots \\
+0 & \cdots & \left[{\rm diag}\left(\bm{A}_n(\bm{\mathcal{B}})\right)-\bm{A}_n(\bm{\mathcal{B}})\bm{A}_n(\bm{\mathcal{B}})^\top\right] \\
+\end{bmatrix}$$
+
+\subsection{Newton's Method}
+
+With Newton's method, we have the one step update as
+$$\begin{aligned}
+\tilde{\bm{\mathcal{B}}}^{/i}=&
+\hat{\bm{\mathcal{B}}}-\left[\bm{\mathcal{X}}^{/iT}
+\bm{\mathcal{D}}^{/i}(\bm{\mathcal{B}})\bm{\mathcal{X}}^{/i}+\nabla^2R(\bm{\mathcal{B}})\right]^{-1}\left[\bm{\mathcal{X}}^{/iT}\left(\bm{\mathcal{A}}^{/iT}(\bm{\mathcal{B}})-\by^{/i}\right)+\nabla R(\bm{\mathcal{B}})\right] \\
+=&\hat{\bm{\mathcal{B}}}+\left[\bm{\mathcal{X}}^\top
+\bm{\mathcal{D}}(\bm{\mathcal{B}})\bm{\mathcal{X}}+\nabla^2R(\bm{\mathcal{B}})-\bX_i^\top\left[{\rm diag}\left(\bm{A}_i(\bm{\mathcal{B}})\right)-\bm{A}_i(\bm{\mathcal{B}})\bm{A}_i(\bm{\mathcal{B}})^\top\right]\bX_i\right]^{-1}\bX_i^\top\left(\bm{A}_i(\bm{\mathcal{B}})-\by_i\right) \\
+\end{aligned}$$
+where,
+$$\bX_i=
+\begin{bmatrix}
+\bm{x}_i^\top & 0 & \cdots & 0 \\
+0 & \bm{x}_i^\top & \cdots & 0 \\
+\vdots & \vdots & \ddots & \vdots \\
+0 & 0 & \cdots & \bm{x}_i^\top \\
+\end{bmatrix}_{K\times pK},\ \ 
+\by_i=\begin{bmatrix}
+y_{i1} \\
+y_{i2} \\
+\vdots \\
+y_{iK} \\
+\end{bmatrix}$$
+\\
+
+Defining $\bm{\mathcal{K}}(\bm{\mathcal{B}})=
+\bm{\mathcal{X}}^\top
+\bm{\mathcal{D}}(\bm{\mathcal{B}})\bm{\mathcal{X}}+\nabla^2R(\bm{\mathcal{B}})$, with matrix inversion lemma, we can get
+$$\begin{aligned}
+\tilde{\bm{\mathcal{B}}}^{/i}
+=&\hat{\bm{\mathcal{B}}}+\left[\bm{\mathcal{K}}(\bm{\mathcal{B}})-\bX_i^\top\left[{\rm diag}\left(\bm{A}_i(\bm{\mathcal{B}})\right)-\bm{A}_i(\bm{\mathcal{B}})\bm{A}_i(\bm{\mathcal{B}})^\top\right]\bX_i\right]^{-1}\bX_i^\top\left(\bm{A}_i(\bm{\mathcal{B}})-\by_i\right) \\
+=&\bm{\mathcal{B}}+\bm{\mathcal{K}}(\bm{\mathcal{B}})^{-1}\bX_i^\top\left(\bm{A}_i(\bm{\mathcal{B}})-\by_i\right) \\
+&-
+\bm{\mathcal{K}}(\bm{\mathcal{B}})^{-1}\bX_i^\top\left\{-\left[{\rm diag}\left(\bm{A}_i(\bm{\mathcal{B}})\right)-\bm{A}_i(\bm{\mathcal{B}})\bm{A}_i(\bm{\mathcal{B}})^\top\right]^{-1}+\bX_i\bm{\mathcal{K}}(\bm{\mathcal{B}})^{-1}\bX_i^\top\right\}^{-1}\bX_i\bm{\mathcal{K}}(\bm{\mathcal{B}})^{-1}\bX_i^\top\left(\bm{A}_i(\bm{\mathcal{B}})-\by_i\right)
+\end{aligned}$$
+
+\subsection{Approximate Leave-$i$-Out Prediction}
+
+Given the approximate leave-$i$-out estimation, we can do the approximate leave-$i$-out prediciton as 
+
+$$\begin{aligned}
+\by_{i}^{/i}=&
+\begin{bmatrix}
+y_{i1}^{/i} \\
+\vdots \\
+y_{iK}^{/i} \\
+\end{bmatrix}=
+\bX_i\tilde{\bm{\mathcal{B}}}^{/i} \\
+=&\bX_i\bm{\mathcal{B}}+\bX_i\bm{\mathcal{K}}(\bm{\mathcal{B}})^{-1}\bX_i^\top\left(\bm{A}_i(\bm{\mathcal{B}})-\by_i\right)\\
+&-\bX_i
+\bm{\mathcal{K}}(\bm{\mathcal{B}})^{-1}\bX_i^\top\left\{-\left[{\rm diag}\left(\bm{A}_i(\bm{\mathcal{B}})\right)-\bm{A}_i(\bm{\mathcal{B}})\bm{A}_i(\bm{\mathcal{B}})^\top\right]^{-1}+\bX_i\bm{\mathcal{K}}(\bm{\mathcal{B}})^{-1}\bX_i^\top\right\}^{-1}\bX_i\bm{\mathcal{K}}(\bm{\mathcal{B}})^{-1}\bX_i^\top\left(\bm{A}_i(\bm{\mathcal{B}})-\by_i\right) \\
+\end{aligned}$$
+
+
+\end{document}
