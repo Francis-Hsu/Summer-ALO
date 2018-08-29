@@ -1,6 +1,7 @@
 # Summer-ALO
 ## Docs
-* `elsnet.pdf` - Compiled notes for `glmnet` related topic.
+* `alo_derivation.pdf` - Derivations of ALO for elastic net models.
+* `alo_glmnet.pdf` - Combined notes for `glmnet` related topic.
 * `update.pdf` - Notes on matrix inversion updates.
 
 ## Files
