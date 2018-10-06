@@ -54,12 +54,12 @@
 \section{ALO with Representer Theorem}
 Let \(\bK\) denote the positive-definite kernel matrix (hence invertible), with \(\bK_{i,j}=K(\bx_i,\bx_j)\). By the Representer Theorem, the dual problem to kernel SVM can be expressed in ``loss \(+\) penalty'' form:
 \begin{equation}
-\min_{\rho,\balpha}\sum_{j=1}^{n}\left(1-y_jf(x_j)\right)_++\frac{\lambda}{2}\balpha^\top\bK\balpha, \qquad f(x_j)=\bK_{\cdot,j}^\top\balpha+\rho.
+\min_{\rho,\balpha}\sum_{j=1}^{n}\max\left[0, 1-y_jf(x_j)\right]+\frac{\lambda}{2}\balpha^\top\bK\balpha, \qquad f(x_j)=\bK_{\cdot,j}^\top\balpha+\rho.
 \end{equation}
-For simplicity we ignore the offset for now. Let \(S\) and \(V\) be the smooth set and the singularities set, respectively. For the \(j\)-th observation, \(j\in S\) and that \(f(x_j)<1\), we have \[\dot{\ell}(\bK_{\cdot,j}^\top\balpha)=-y_j,\qquad\ddot{\ell}(\bK_{\cdot,j}^\top\balpha)=0.\] Additionally, \[\nabla R(\balpha)=\lambda\bK\balpha,\qquad\nabla^2R(\balpha)=\lambda\bK.\] Substitute corresponding terms in \refthm{Thm.}{4.1}, we deduce the ALO formula for kernel SVM: \[\bK_{\cdot,i}^\top\tilde{\balpha}^{\setminus i}=\bK_{\cdot,i}^\top\hat{\balpha}+a_ig_{\ell,i},\] where \[a_i=\begin{dcases}
+For simplicity we ignore the offset for now. Let \(S\) and \(V\) be the smooth set and the set of singularities, respectively. For the \(j\)-th observation, \(j\in S\), we have \[\dot{\ell}(\bK_{\cdot,j}^\top\balpha)=-y_j\cdot\bm{1}\{y_j\bK_{\cdot,j}^\top\balpha<1\},\qquad\ddot{\ell}(\bK_{\cdot,j}^\top\balpha)=0.\] Additionally, \[\nabla R(\balpha)=\lambda\bK\balpha,\qquad\nabla^2R(\balpha)=\lambda\bK.\] Substitute corresponding terms in \refthm{Thm.}{4.1}, we deduce the ALO formula for kernel SVM: \[\bK_{\cdot,i}^\top\tilde{\balpha}^{\setminus i}=\bK_{\cdot,i}^\top\hat{\balpha}+a_ig_{\ell,i},\] where \[a_i=\begin{dcases}
 \frac{1}{\lambda}\bK_{\cdot,i}^\top\left[\bK^{-1}-\bK^{-1}\bK_{\cdot,V}\left(\bK_{\cdot,V}^\top\bK^{-1}\bK_{\cdot,V}\right)^{-1}\bK_{\cdot,V}^\top\bK^{-1}\right]\bK_{\cdot,i} & i\in S,\\
 \left[\lambda\left(\bK_{\cdot,V}^\top\bK^{-1}\bK_{\cdot,V}\right)^{-1}_{ii}\right]^{-1} & i\in V,
-\end{dcases}\] and \[g_{\ell, S}=-y_S\odot\bm{1}\left\{y_S\bK_{\cdot,S}^\top\balpha<1\right\},\qquad g_{\ell, V}=\left(\bK_{\cdot,V}\bK_{\cdot,V}^\top\right)^{-1}\bK_{\cdot,V}\left[\lambda\bK\alpha-\sum_{j:y_j\bK_{\cdot,j}^\top\balpha<1}y_j\bK_{\cdot,j}\right].\]
+\end{dcases}\] and \[g_{\ell, S}=-y_S\odot\bm{1}\left\{y_S\bK_{\cdot,S}^\top\balpha<1\right\},\qquad g_{\ell, V}=\left(\bK_{\cdot,V}^\top\bK_{\cdot,V}\right)^{-1}\bK_{\cdot,V}^\top\left[\sum_{j:y_j\bK_{\cdot,j}^\top\balpha<1}y_j\bK_{\cdot,j}-\lambda\bK\alpha\right].\]
 
 \section{ALO with Approximate Explicit Feature Maps}
 In non-linear SVM, kernel trick is employed to avoid the explicit computation of feature maps, which sometime is impossible since the feature space can be infinite-dimensional. However, when sample size \(n\) is large, the kernel matrices become quite expensive to handle. Methods such as the Nystr\"{o}m approximation are used in order to retain the benefit of features mapping whilst retaining the speed of linear SVM. We may adopt a similar idea to help the ALO computation.
@@ -71,4 +71,66 @@ Let \(\bX\) be the data matrix and \(\bK\) be the corresponding kernel matrix. A
 		\item Construct the approximate map as \(\hat{\bPhi}=\bK\bm{U}\tilde{\bm{S}}^{-1/2}\bm{V}^\top\approx\bK^{1/2}\).
 	\end{enumerate}
 To compute ALO, we then simply replace the data matrix \(\bX\) with \(\hat{\bPhi}\) in the linear SVM formula.
+
+\section{Numerical Experiment}
+We tested the two methods using simulated data. All model are fitted on the following grid of penalty: \(\lambda=\exp(-2:6:(1/3))\).
+\subsection{RBF}
+Both methods produce similar and satisfying result. Note that for \(p>n\) example the scale of \(Y\)-axis is relatively small, so the classification error is not really as bad as it looks.
+\begin{figure}[H]
+	\centering
+	\input{rbf_1_1.tex}
+	\caption{ALO and LOO comparison for SVM with RBF kernel. Direct method. \(n=300\), \(p=400\), \(\gamma=3/p\).}
+\end{figure}
+\begin{figure}[H]
+	\centering
+	\input{rbf_1_2.tex}
+	\caption{ALO and LOO comparison for SVM with RBF kernel. Feature map method. \(n=300\), \(p=400\), \(\gamma=3/p\).}
+\end{figure}
+\begin{figure}[H]
+	\centering
+	\input{rbf_2_1.tex}
+	\caption{ALO and LOO comparison for SVM with RBF kernel. Direct method. \(n=300\), \(p=50\), \(\gamma=2/p\).}
+\end{figure}
+\begin{figure}[H]
+	\centering
+	\input{rbf_2_2.tex}
+	\caption{ALO and LOO comparison for SVM with RBF kernel. Feature map method. \(n=300\), \(p=50\), \(\gamma=2/p\).}
+\end{figure}
+
+\subsection{Polynomial}
+Both methods again produce similar and satisfying result.
+\begin{figure}[H]
+	\centering
+	\input{pol_1_1.tex}
+	\caption{ALO and LOO comparison for SVM with polynomial kernel. Direct method. \(n=300\), \(p=50\), \(\gamma=3/p\), \(d=3\).}
+\end{figure}
+\begin{figure}[H]
+	\centering
+	\input{pol_1_2.tex}
+	\caption{ALO and LOO comparison for SVM with RBF kernel. Feature map method. \(n=300\), \(p=50\), \(\gamma=3/p\), \(d=3\).}
+\end{figure}
+\begin{figure}[H]
+	\centering
+	\input{pol_2_1.tex}
+	\caption{ALO and LOO comparison for SVM with polynomial kernel. Direct method. \(n=300\), \(p=50\), \(\gamma=2/p\), \(c_0=0.25\), \(d=5\).}
+\end{figure}
+\begin{figure}[H]
+	\centering
+	\input{pol_2_2.tex}
+	\caption{ALO and LOO comparison for SVM with RBF kernel. Feature map method. \(n=300\), \(p=50\), \(\gamma=2/p\), \(c_0=0.25\), \(d=5\).}
+\end{figure}
+
+\subsection{Sigmoid}
+None of the methods works well with the sigmoid kernel, however. Since it is not a positive-definite kernel and thus singular. Attempt to use pseudo-inverse to fix the problem produces unstable result.
+
+\begin{figure}[H]
+	\centering
+	\input{sig_1.tex}
+	\caption{ALO and LOO comparison for SVM with sigmoid kernel. Direct method. \(n=300\), \(p=50\), \(\gamma=2/p\), \(c_0=0\).}
+\end{figure}
+\begin{figure}[H]
+	\centering
+	\input{sig_2.tex}
+	\caption{ALO and LOO comparison for SVM with sigmoid kernel. Feature map method. \(n=300\), \(p=50\), \(\gamma=2/p\), \(c_0=0\).}
+\end{figure}
 \end{document}
