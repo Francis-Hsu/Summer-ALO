@@ -59,15 +59,16 @@ vec svmALO_LIBLINEAR(const double &lambda, const mat &X, const vec &y, const vec
 //[[Rcpp::export]]
 vec svmALO(const mat &X, const vec &y, const vec &w, const double &b, const double &lambda, 
            const double &tol) {
+  arma::uword N = X.n_rows;
   arma::uword P = X.n_cols;
   
   // augment the data and weight matrices with offset
-  arma::mat XAug = arma::join_rows(X, ones<vec>(P));
-  arma::vec wAug(P + 1);
-  wAug(span(0, P - 1)) = w;
-  wAug(P) = b;
+  //arma::mat XAug = arma::join_rows(X, ones<vec>(P));
+  //arma::vec wAug(P + 1);
+  ////wAug(span(0, P - 1)) = w;
+  //wAug(P) = b;
   
-  arma::vec yHat = XAug * wAug;
+  arma::vec yHat = X * w + b;
   arma::vec yyHat = y % yHat;
   
   // identify singularities
@@ -75,18 +76,18 @@ vec svmALO(const mat &X, const vec &y, const vec &w, const double &b, const doub
   arma::uvec S = arma::find(arma::abs(1 - yyHat) >= tol);
   
   // useful matrices
-  arma::mat I_p = arma::eye<mat>(P + 1, P + 1);
-  arma::mat XV = XAug.rows(V);
-  arma::mat XS = XAug.rows(S);
-  arma::mat inv_XXV = arma::inv_sympd(XV * XV.t());
+  arma::mat I_p = arma::eye<mat>(P, P);
+  arma::mat XV = X.rows(V);
+  arma::mat XS = X.rows(S);
+  arma::mat inv_XXV = arma::inv(XV * XV.t());
   
   arma::uvec gID = arma::intersect(arma::find(yyHat < 1.0), S);
-  arma::mat yX_g = XAug.rows(gID);
+  arma::mat yX_g = X.rows(gID);
   yX_g.each_col() %= y.elem(gID);
   
   // containers for a and g
-  arma::vec a = zeros<vec>(XAug.n_rows);
-  arma::vec g = zeros<vec>(XAug.n_rows);
+  arma::vec a = zeros<vec>(N);
+  arma::vec g = zeros<vec>(N);
   
   // compute a and g for S
   arma::mat Xa_s = XS * (I_p - XV.t() * inv_XXV * XV) * XS.t() / lambda;
@@ -94,10 +95,10 @@ vec svmALO(const mat &X, const vec &y, const vec &w, const double &b, const doub
   g.elem(gID) = -y.elem(gID);
   
   // compute a and g for V
-  arma::vec gradR = lambda * wAug;
+  arma::vec gradR = lambda * w;
   arma::vec sum_yX = trans(arma::sum(yX_g, 0));
   a.elem(V) = 1 / (lambda * arma::diagvec(inv_XXV));
-  g.elem(V) = inv_XXV * XV * (gradR - sum_yX);
+  g.elem(V) = inv_XXV * XV * (sum_yX - gradR);
   
   return yHat + a % g;
 }
@@ -108,27 +109,23 @@ vec svmKerALO(const mat &K, const vec &y, const vec &alpha, const double &rho, c
   arma::uword N = y.n_elem;
   
   // augment the data and weight matrices with offset
-  arma::mat Kinv = arma::inv_sympd(K);
-  arma::mat KAug = arma::join_rows(K, ones<vec>(N));
-  arma::vec aAug(N + 1);
-  aAug(arma::span(0, N - 1)) = alpha;
-  aAug(N) = rho;
+  arma::mat Kinv = arma::inv(K); // cannot use inv_sympd because of sigmoid kernel
   
-  arma::vec yHat = KAug * aAug;
+  arma::vec yHat = K * alpha + rho;
   arma::vec yyHat = y % yHat;
   
-  // identify support vectors
+  // identify singularities
   arma::uvec V = arma::find(arma::abs(1 - yyHat) < tol);
   arma::uvec S = arma::find(arma::abs(1 - yyHat) >= tol);
   
   // useful matrices
   arma::mat I_n = arma::eye<mat>(N, N);
-  arma::mat KV = KAug.cols(V);
-  arma::mat KS = KAug.cols(S);
-  arma::mat K1 = arma::inv_sympd(KV.t() * Kinv * KV);
+  arma::mat KV = K.cols(V);
+  arma::mat KS = K.cols(S);
+  arma::mat K1 = arma::inv(KV.t() * Kinv * KV);
   
   arma::uvec gID = arma::intersect(arma::find(yyHat < 1.0), S);
-  arma::mat yK_g = KAug.cols(gID);
+  arma::mat yK_g = K.cols(gID);
   yK_g.each_row() %= arma::trans(y.elem(gID));
   
   // containers for a and g
@@ -141,10 +138,10 @@ vec svmKerALO(const mat &K, const vec &y, const vec &alpha, const double &rho, c
   g.elem(gID) = -y.elem(gID);
   
   // compute a and g for V
-  arma::vec gradR = lambda * KAug * aAug;
+  arma::vec gradR = lambda * K * alpha;
   arma::vec sum_yK = arma::sum(yK_g, 1);
   a.elem(V) = 1 / (lambda * arma::diagvec(K1));
-  g.elem(V) = arma::inv_sympd(KV.t() * KV) * KV.t() * (gradR - sum_yK);
+  g.elem(V) = arma::inv(KV.t() * KV) * KV.t() * (sum_yK - gradR);
   
   return yHat + a % g;
 }
