@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"><head>
+
+<meta charset="utf-8">
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta name="generator" content="pandoc">
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<meta name="author" content="Vignette Author">
+
+<meta name="date" content="2018-11-21">
+
+<title>Vignette Title</title>
+
+
+
+<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css">
+a.sourceLine { display: inline-block; line-height: 1.25; }
+a.sourceLine { pointer-events: none; color: inherit; text-decoration: inherit; }
+a.sourceLine:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode { white-space: pre; position: relative; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+code.sourceCode { white-space: pre-wrap; }
+a.sourceLine { text-indent: -1em; padding-left: 1em; }
+}
+pre.numberSource a.sourceLine
+  { position: relative; left: -4em; }
+pre.numberSource a.sourceLine::before
+  { content: attr(data-line-number);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; pointer-events: all; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {  }
+@media screen {
+a.sourceLine::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code span.at { color: #7d9029; } /* Attribute */
+code span.bn { color: #40a070; } /* BaseN */
+code span.bu { } /* BuiltIn */
+code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #4070a0; } /* Char */
+code span.cn { color: #880000; } /* Constant */
+code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code span.dt { color: #902000; } /* DataType */
+code span.dv { color: #40a070; } /* DecVal */
+code span.er { color: #ff0000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #40a070; } /* Float */
+code span.fu { color: #06287e; } /* Function */
+code span.im { } /* Import */
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code span.op { color: #666666; } /* Operator */
+code span.ot { color: #007020; } /* Other */
+code span.pp { color: #bc7a00; } /* Preprocessor */
+code span.sc { color: #4070a0; } /* SpecialChar */
+code span.ss { color: #bb6688; } /* SpecialString */
+code span.st { color: #4070a0; } /* String */
+code span.va { color: #19177c; } /* Variable */
+code span.vs { color: #4070a0; } /* VerbatimString */
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+</style>
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#header {
+text-align: center;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; }  code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+<script type="text/javascript" src="VignetteSample_files/MathJax.js"></script><style type="text/css">.MathJax_Hover_Frame {border-radius: .25em; -webkit-border-radius: .25em; -moz-border-radius: .25em; -khtml-border-radius: .25em; box-shadow: 0px 0px 15px #83A; -webkit-box-shadow: 0px 0px 15px #83A; -moz-box-shadow: 0px 0px 15px #83A; -khtml-box-shadow: 0px 0px 15px #83A; border: 1px solid #A6D ! important; display: inline-block; position: absolute}
+.MathJax_Menu_Button .MathJax_Hover_Arrow {position: absolute; cursor: pointer; display: inline-block; border: 2px solid #AAA; border-radius: 4px; -webkit-border-radius: 4px; -moz-border-radius: 4px; -khtml-border-radius: 4px; font-family: 'Courier New',Courier; font-size: 9px; color: #F0F0F0}
+.MathJax_Menu_Button .MathJax_Hover_Arrow span {display: block; background-color: #AAA; border: 1px solid; border-radius: 3px; line-height: 0; padding: 4px}
+.MathJax_Hover_Arrow:hover {color: white!important; border: 2px solid #CCC!important}
+.MathJax_Hover_Arrow:hover span {background-color: #CCC!important}
+</style><style type="text/css">#MathJax_About {position: fixed; left: 50%; width: auto; text-align: center; border: 3px outset; padding: 1em 2em; background-color: #DDDDDD; color: black; cursor: default; font-family: message-box; font-size: 120%; font-style: normal; text-indent: 0; text-transform: none; line-height: normal; letter-spacing: normal; word-spacing: normal; word-wrap: normal; white-space: nowrap; float: none; z-index: 201; border-radius: 15px; -webkit-border-radius: 15px; -moz-border-radius: 15px; -khtml-border-radius: 15px; box-shadow: 0px 10px 20px #808080; -webkit-box-shadow: 0px 10px 20px #808080; -moz-box-shadow: 0px 10px 20px #808080; -khtml-box-shadow: 0px 10px 20px #808080; filter: progid:DXImageTransform.Microsoft.dropshadow(OffX=2, OffY=2, Color='gray', Positive='true')}
+#MathJax_About.MathJax_MousePost {outline: none}
+.MathJax_Menu {position: absolute; background-color: white; color: black; width: auto; padding: 2px; border: 1px solid #CCCCCC; margin: 0; cursor: default; font: menu; text-align: left; text-indent: 0; text-transform: none; line-height: normal; letter-spacing: normal; word-spacing: normal; word-wrap: normal; white-space: nowrap; float: none; z-index: 201; box-shadow: 0px 10px 20px #808080; -webkit-box-shadow: 0px 10px 20px #808080; -moz-box-shadow: 0px 10px 20px #808080; -khtml-box-shadow: 0px 10px 20px #808080; filter: progid:DXImageTransform.Microsoft.dropshadow(OffX=2, OffY=2, Color='gray', Positive='true')}
+.MathJax_MenuItem {padding: 2px 2em; background: transparent}
+.MathJax_MenuArrow {position: absolute; right: .5em; padding-top: .25em; color: #666666; font-size: .75em}
+.MathJax_MenuActive .MathJax_MenuArrow {color: white}
+.MathJax_MenuArrow.RTL {left: .5em; right: auto}
+.MathJax_MenuCheck {position: absolute; left: .7em}
+.MathJax_MenuCheck.RTL {right: .7em; left: auto}
+.MathJax_MenuRadioCheck {position: absolute; left: 1em}
+.MathJax_MenuRadioCheck.RTL {right: 1em; left: auto}
+.MathJax_MenuLabel {padding: 2px 2em 4px 1.33em; font-style: italic}
+.MathJax_MenuRule {border-top: 1px solid #CCCCCC; margin: 4px 1px 0px}
+.MathJax_MenuDisabled {color: GrayText}
+.MathJax_MenuActive {background-color: Highlight; color: HighlightText}
+.MathJax_MenuDisabled:focus, .MathJax_MenuLabel:focus {background-color: #E8E8E8}
+.MathJax_ContextMenu:focus {outline: none}
+.MathJax_ContextMenu .MathJax_MenuItem:focus {outline: none}
+#MathJax_AboutClose {top: .2em; right: .2em}
+.MathJax_Menu .MathJax_MenuClose {top: -10px; left: -10px}
+.MathJax_MenuClose {position: absolute; cursor: pointer; display: inline-block; border: 2px solid #AAA; border-radius: 18px; -webkit-border-radius: 18px; -moz-border-radius: 18px; -khtml-border-radius: 18px; font-family: 'Courier New',Courier; font-size: 24px; color: #F0F0F0}
+.MathJax_MenuClose span {display: block; background-color: #AAA; border: 1.5px solid; border-radius: 18px; -webkit-border-radius: 18px; -moz-border-radius: 18px; -khtml-border-radius: 18px; line-height: 0; padding: 8px 0 6px}
+.MathJax_MenuClose:hover {color: white!important; border: 2px solid #CCC!important}
+.MathJax_MenuClose:hover span {background-color: #CCC!important}
+.MathJax_MenuClose:hover:focus {outline: none}
+</style><style type="text/css">.MathJax_Preview .MJXf-math {color: inherit!important}
+</style><style type="text/css">.MJX_Assistive_MathML {position: absolute!important; top: 0; left: 0; clip: rect(1px, 1px, 1px, 1px); padding: 1px 0 0 0!important; border: 0!important; height: 1px!important; width: 1px!important; overflow: hidden!important; display: block!important; -webkit-touch-callout: none; -webkit-user-select: none; -khtml-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none}
+.MJX_Assistive_MathML.MJX_Assistive_MathML_Block {width: 100%!important}
+</style><style type="text/css">#MathJax_Zoom {position: absolute; background-color: #F0F0F0; overflow: auto; display: block; z-index: 301; padding: .5em; border: 1px solid black; margin: 0; font-weight: normal; font-style: normal; text-align: left; text-indent: 0; text-transform: none; line-height: normal; letter-spacing: normal; word-spacing: normal; word-wrap: normal; white-space: nowrap; float: none; -webkit-box-sizing: content-box; -moz-box-sizing: content-box; box-sizing: content-box; box-shadow: 5px 5px 15px #AAAAAA; -webkit-box-shadow: 5px 5px 15px #AAAAAA; -moz-box-shadow: 5px 5px 15px #AAAAAA; -khtml-box-shadow: 5px 5px 15px #AAAAAA; filter: progid:DXImageTransform.Microsoft.dropshadow(OffX=2, OffY=2, Color='gray', Positive='true')}
+#MathJax_ZoomOverlay {position: absolute; left: 0; top: 0; z-index: 300; display: inline-block; width: 100%; height: 100%; border: 0; padding: 0; margin: 0; background-color: white; opacity: 0; filter: alpha(opacity=0)}
+#MathJax_ZoomFrame {position: relative; display: inline-block; height: 0; width: 0}
+#MathJax_ZoomEventTrap {position: absolute; left: 0; top: 0; z-index: 302; display: inline-block; border: 0; padding: 0; margin: 0; background-color: white; opacity: 0; filter: alpha(opacity=0)}
+</style><style type="text/css">.MathJax_Preview {color: #888}
+#MathJax_Message {position: fixed; left: 1px; bottom: 2px; background-color: #E6E6E6; border: 1px solid #959595; margin: 0px; padding: 2px 8px; z-index: 102; color: black; font-size: 80%; width: auto; white-space: nowrap}
+#MathJax_MSIE_Frame {position: absolute; top: 0; left: 0; width: 0px; z-index: 101; border: 0px; margin: 0px; padding: 0px}
+.MathJax_Error {color: #CC0000; font-style: italic}
+</style><style type="text/css">.MJXp-script {font-size: .8em}
+.MJXp-right {-webkit-transform-origin: right; -moz-transform-origin: right; -ms-transform-origin: right; -o-transform-origin: right; transform-origin: right}
+.MJXp-bold {font-weight: bold}
+.MJXp-italic {font-style: italic}
+.MJXp-scr {font-family: MathJax_Script,'Times New Roman',Times,STIXGeneral,serif}
+.MJXp-frak {font-family: MathJax_Fraktur,'Times New Roman',Times,STIXGeneral,serif}
+.MJXp-sf {font-family: MathJax_SansSerif,'Times New Roman',Times,STIXGeneral,serif}
+.MJXp-cal {font-family: MathJax_Caligraphic,'Times New Roman',Times,STIXGeneral,serif}
+.MJXp-mono {font-family: MathJax_Typewriter,'Times New Roman',Times,STIXGeneral,serif}
+.MJXp-largeop {font-size: 150%}
+.MJXp-largeop.MJXp-int {vertical-align: -.2em}
+.MJXp-math {display: inline-block; line-height: 1.2; text-indent: 0; font-family: 'Times New Roman',Times,STIXGeneral,serif; white-space: nowrap; border-collapse: collapse}
+.MJXp-display {display: block; text-align: center; margin: 1em 0}
+.MJXp-math span {display: inline-block}
+.MJXp-box {display: block!important; text-align: center}
+.MJXp-box:after {content: " "}
+.MJXp-rule {display: block!important; margin-top: .1em}
+.MJXp-char {display: block!important}
+.MJXp-mo {margin: 0 .15em}
+.MJXp-mfrac {margin: 0 .125em; vertical-align: .25em}
+.MJXp-denom {display: inline-table!important; width: 100%}
+.MJXp-denom > * {display: table-row!important}
+.MJXp-surd {vertical-align: top}
+.MJXp-surd > * {display: block!important}
+.MJXp-script-box > *  {display: table!important; height: 50%}
+.MJXp-script-box > * > * {display: table-cell!important; vertical-align: top}
+.MJXp-script-box > *:last-child > * {vertical-align: bottom}
+.MJXp-script-box > * > * > * {display: block!important}
+.MJXp-mphantom {visibility: hidden}
+.MJXp-munderover {display: inline-table!important}
+.MJXp-over {display: inline-block!important; text-align: center}
+.MJXp-over > * {display: block!important}
+.MJXp-munderover > * {display: table-row!important}
+.MJXp-mtable {vertical-align: .25em; margin: 0 .125em}
+.MJXp-mtable > * {display: inline-table!important; vertical-align: middle}
+.MJXp-mtr {display: table-row!important}
+.MJXp-mtd {display: table-cell!important; text-align: center; padding: .5em 0 0 .5em}
+.MJXp-mtr > .MJXp-mtd:first-child {padding-left: 0}
+.MJXp-mtr:first-child > .MJXp-mtd {padding-top: 0}
+.MJXp-mlabeledtr {display: table-row!important}
+.MJXp-mlabeledtr > .MJXp-mtd:first-child {padding-left: 0}
+.MJXp-mlabeledtr:first-child > .MJXp-mtd {padding-top: 0}
+.MJXp-merror {background-color: #FFFF88; color: #CC0000; border: 1px solid #CC0000; padding: 1px 3px; font-style: normal; font-size: 90%}
+.MJXp-scale0 {-webkit-transform: scaleX(.0); -moz-transform: scaleX(.0); -ms-transform: scaleX(.0); -o-transform: scaleX(.0); transform: scaleX(.0)}
+.MJXp-scale1 {-webkit-transform: scaleX(.1); -moz-transform: scaleX(.1); -ms-transform: scaleX(.1); -o-transform: scaleX(.1); transform: scaleX(.1)}
+.MJXp-scale2 {-webkit-transform: scaleX(.2); -moz-transform: scaleX(.2); -ms-transform: scaleX(.2); -o-transform: scaleX(.2); transform: scaleX(.2)}
+.MJXp-scale3 {-webkit-transform: scaleX(.3); -moz-transform: scaleX(.3); -ms-transform: scaleX(.3); -o-transform: scaleX(.3); transform: scaleX(.3)}
+.MJXp-scale4 {-webkit-transform: scaleX(.4); -moz-transform: scaleX(.4); -ms-transform: scaleX(.4); -o-transform: scaleX(.4); transform: scaleX(.4)}
+.MJXp-scale5 {-webkit-transform: scaleX(.5); -moz-transform: scaleX(.5); -ms-transform: scaleX(.5); -o-transform: scaleX(.5); transform: scaleX(.5)}
+.MJXp-scale6 {-webkit-transform: scaleX(.6); -moz-transform: scaleX(.6); -ms-transform: scaleX(.6); -o-transform: scaleX(.6); transform: scaleX(.6)}
+.MJXp-scale7 {-webkit-transform: scaleX(.7); -moz-transform: scaleX(.7); -ms-transform: scaleX(.7); -o-transform: scaleX(.7); transform: scaleX(.7)}
+.MJXp-scale8 {-webkit-transform: scaleX(.8); -moz-transform: scaleX(.8); -ms-transform: scaleX(.8); -o-transform: scaleX(.8); transform: scaleX(.8)}
+.MJXp-scale9 {-webkit-transform: scaleX(.9); -moz-transform: scaleX(.9); -ms-transform: scaleX(.9); -o-transform: scaleX(.9); transform: scaleX(.9)}
+.MathJax_PHTML .noError {vertical-align: ; font-size: 90%; text-align: left; color: black; padding: 1px 3px; border: 1px solid}
+</style><style type="text/css">.MathJax_Display {text-align: center; margin: 1em 0em; position: relative; display: block!important; text-indent: 0; max-width: none; max-height: none; min-width: 0; min-height: 0; width: 100%}
+.MathJax .merror {background-color: #FFFF88; color: #CC0000; border: 1px solid #CC0000; padding: 1px 3px; font-style: normal; font-size: 90%}
+.MathJax .MJX-monospace {font-family: monospace}
+.MathJax .MJX-sans-serif {font-family: sans-serif}
+#MathJax_Tooltip {background-color: InfoBackground; color: InfoText; border: 1px solid black; box-shadow: 2px 2px 5px #AAAAAA; -webkit-box-shadow: 2px 2px 5px #AAAAAA; -moz-box-shadow: 2px 2px 5px #AAAAAA; -khtml-box-shadow: 2px 2px 5px #AAAAAA; filter: progid:DXImageTransform.Microsoft.dropshadow(OffX=2, OffY=2, Color='gray', Positive='true'); padding: 3px 4px; z-index: 401; position: absolute; left: 0; top: 0; width: auto; height: auto; display: none}
+.MathJax {display: inline; font-style: normal; font-weight: normal; line-height: normal; font-size: 100%; font-size-adjust: none; text-indent: 0; text-align: left; text-transform: none; letter-spacing: normal; word-spacing: normal; word-wrap: normal; white-space: nowrap; float: none; direction: ltr; max-width: none; max-height: none; min-width: 0; min-height: 0; border: 0; padding: 0; margin: 0}
+.MathJax:focus, body :focus .MathJax {display: inline-table}
+.MathJax.MathJax_FullWidth {text-align: center; display: table-cell!important; width: 10000em!important}
+.MathJax img, .MathJax nobr, .MathJax a {border: 0; padding: 0; margin: 0; max-width: none; max-height: none; min-width: 0; min-height: 0; vertical-align: 0; line-height: normal; text-decoration: none}
+img.MathJax_strut {border: 0!important; padding: 0!important; margin: 0!important; vertical-align: 0!important}
+.MathJax span {display: inline; position: static; border: 0; padding: 0; margin: 0; vertical-align: 0; line-height: normal; text-decoration: none}
+.MathJax nobr {white-space: nowrap!important}
+.MathJax img {display: inline!important; float: none!important}
+.MathJax * {transition: none; -webkit-transition: none; -moz-transition: none; -ms-transition: none; -o-transition: none}
+.MathJax_Processing {visibility: hidden; position: fixed; width: 0; height: 0; overflow: hidden}
+.MathJax_Processed {display: none!important}
+.MathJax_ExBox {display: block!important; overflow: hidden; width: 1px; height: 60ex; min-height: 0; max-height: none}
+.MathJax .MathJax_EmBox {display: block!important; overflow: hidden; width: 1px; height: 60em; min-height: 0; max-height: none}
+.MathJax_LineBox {display: table!important}
+.MathJax_LineBox span {display: table-cell!important; width: 10000em!important; min-width: 0; max-width: none; padding: 0; border: 0; margin: 0}
+.MathJax .MathJax_HitBox {cursor: text; background: white; opacity: 0; filter: alpha(opacity=0)}
+.MathJax .MathJax_HitBox * {filter: none; opacity: 1; background: transparent}
+#MathJax_Tooltip * {filter: none; opacity: 1; background: transparent}
+@font-face {font-family: MathJax_Main; src: url('https://mathjax.rstudio.com/latest/fonts/HTML-CSS/TeX/woff/MathJax_Main-Regular.woff?V=2.7.2') format('woff'), url('https://mathjax.rstudio.com/latest/fonts/HTML-CSS/TeX/otf/MathJax_Main-Regular.otf?V=2.7.2') format('opentype')}
+@font-face {font-family: MathJax_Main; src: url('https://mathjax.rstudio.com/latest/fonts/HTML-CSS/TeX/woff/MathJax_Main-Bold.woff?V=2.7.2') format('woff'), url('https://mathjax.rstudio.com/latest/fonts/HTML-CSS/TeX/otf/MathJax_Main-Bold.otf?V=2.7.2') format('opentype'); font-weight: bold}
+@font-face {font-family: MathJax_Main; src: url('https://mathjax.rstudio.com/latest/fonts/HTML-CSS/TeX/woff/MathJax_Main-Italic.woff?V=2.7.2') format('woff'), url('https://mathjax.rstudio.com/latest/fonts/HTML-CSS/TeX/otf/MathJax_Main-Italic.otf?V=2.7.2') format('opentype'); font-style: italic}
+@font-face {font-family: MathJax_Math; src: url('https://mathjax.rstudio.com/latest/fonts/HTML-CSS/TeX/woff/MathJax_Math-Italic.woff?V=2.7.2') format('woff'), url('https://mathjax.rstudio.com/latest/fonts/HTML-CSS/TeX/otf/MathJax_Math-Italic.otf?V=2.7.2') format('opentype'); font-style: italic}
+@font-face {font-family: MathJax_Caligraphic; src: url('https://mathjax.rstudio.com/latest/fonts/HTML-CSS/TeX/woff/MathJax_Caligraphic-Regular.woff?V=2.7.2') format('woff'), url('https://mathjax.rstudio.com/latest/fonts/HTML-CSS/TeX/otf/MathJax_Caligraphic-Regular.otf?V=2.7.2') format('opentype')}
+@font-face {font-family: MathJax_Size1; src: url('https://mathjax.rstudio.com/latest/fonts/HTML-CSS/TeX/woff/MathJax_Size1-Regular.woff?V=2.7.2') format('woff'), url('https://mathjax.rstudio.com/latest/fonts/HTML-CSS/TeX/otf/MathJax_Size1-Regular.otf?V=2.7.2') format('opentype')}
+@font-face {font-family: MathJax_Size2; src: url('https://mathjax.rstudio.com/latest/fonts/HTML-CSS/TeX/woff/MathJax_Size2-Regular.woff?V=2.7.2') format('woff'), url('https://mathjax.rstudio.com/latest/fonts/HTML-CSS/TeX/otf/MathJax_Size2-Regular.otf?V=2.7.2') format('opentype')}
+@font-face {font-family: MathJax_Size3; src: url('https://mathjax.rstudio.com/latest/fonts/HTML-CSS/TeX/woff/MathJax_Size3-Regular.woff?V=2.7.2') format('woff'), url('https://mathjax.rstudio.com/latest/fonts/HTML-CSS/TeX/otf/MathJax_Size3-Regular.otf?V=2.7.2') format('opentype')}
+@font-face {font-family: MathJax_Size4; src: url('https://mathjax.rstudio.com/latest/fonts/HTML-CSS/TeX/woff/MathJax_Size4-Regular.woff?V=2.7.2') format('woff'), url('https://mathjax.rstudio.com/latest/fonts/HTML-CSS/TeX/otf/MathJax_Size4-Regular.otf?V=2.7.2') format('opentype')}
+.MathJax .noError {vertical-align: ; font-size: 90%; text-align: left; color: black; padding: 1px 3px; border: 1px solid}
+</style></head>
+
+<body><div style="visibility: hidden; overflow: hidden; position: absolute; top: 0px; height: 1px; width: auto; padding: 0px; border: 0px none; margin: 0px; text-align: left; text-indent: 0px; text-transform: none; line-height: normal; letter-spacing: normal; word-spacing: normal;"><div id="MathJax_Hidden"></div></div><div id="MathJax_Message" style="display: none;"></div>
+
+
+
+
+<h1 class="title toc-ignore">Vignette Title</h1>
+<h4 class="author"><em>Vignette Author</em></h4>
+<h4 class="date"><em>2018-11-21</em></h4>
+
+
+
+<div id="introduction" class="section level2">
+<h2>Introduction</h2>
+<p><code>alocv</code> is a package that implements the method proposed by Wang <em>et al</em>.
+ (2018). In short, it approximates the leave-one-out cross-validation 
+(LOOCV) risk for several standard models, using only the full-data 
+solution. Since the model no longer needs to be fitted <span class="math inline"><span class="MathJax_Preview" style="color: inherit; display: none;"></span><span class="MathJax" id="MathJax-Element-1-Frame" tabindex="0" style="position: relative;" data-mathml="&lt;math xmlns=&quot;http://www.w3.org/1998/Math/MathML&quot;&gt;&lt;mi&gt;n&lt;/mi&gt;&lt;/math&gt;" role="presentation"><nobr aria-hidden="true"><span class="math" id="MathJax-Span-1" style="width: 0.717em; display: inline-block;"><span style="display: inline-block; position: relative; width: 0.595em; height: 0px; font-size: 120%;"><span style="position: absolute; clip: rect(1.701em, 1000.58em, 2.511em, -1000em); top: -2.321em; left: 0em;"><span class="mrow" id="MathJax-Span-2"><span class="mi" id="MathJax-Span-3" style="font-family: MathJax_Math; font-style: italic;">n</span></span><span style="display: inline-block; width: 0px; height: 2.321em;"></span></span></span><span style="display: inline-block; overflow: hidden; vertical-align: -0.085em; border-left: 0px solid; width: 0px; height: 0.686em;"></span></span></nobr><span class="MJX_Assistive_MathML" role="presentation"><math xmlns="http://www.w3.org/1998/Math/MathML"><mi>n</mi></math></span></span><script type="math/tex" id="MathJax-Element-1">n</script></span>
+ times, the LOOCV estimates can be obtained very efficiently, even in 
+the case when n is so large that leave-one-out is infeasible.</p>
+<p>This package currently supports LOOCV approximation for Elastic-net GLM (<code>glmnet</code>) and SVM (<code>e1071</code>).</p>
+</div>
+<div id="usage-with-glmnet" class="section level2">
+<h2>Usage with <code>glmnet</code></h2>
+<p>We begin by loading our package, of course:</p>
+<pre><code>#&gt; Loading required package: glmnet
+#&gt; Loading required package: Matrix
+#&gt; Loading required package: foreach
+#&gt; Loaded glmnet 2.0-16</code></pre>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb2-1" data-line-number="1"><span class="kw">glmnetALO</span>(X, y, glm_obj, alpha, standardize, type.measure)</a></code></pre></div>
+<p>For demonstration, we will now create some artifical data of size <span class="math inline"><span class="MathJax_Preview" style="color: inherit; display: none;"></span><span class="MathJax" id="MathJax-Element-2-Frame" tabindex="0" style="position: relative;" data-mathml="&lt;math xmlns=&quot;http://www.w3.org/1998/Math/MathML&quot;&gt;&lt;mi&gt;n&lt;/mi&gt;&lt;mo&gt;=&lt;/mo&gt;&lt;mn&gt;500&lt;/mn&gt;&lt;/math&gt;" role="presentation"><nobr aria-hidden="true"><span class="math" id="MathJax-Span-4" style="width: 4.17em; display: inline-block;"><span style="display: inline-block; position: relative; width: 3.452em; height: 0px; font-size: 120%;"><span style="position: absolute; clip: rect(1.477em, 1003.41em, 2.522em, -1000em); top: -2.321em; left: 0em;"><span class="mrow" id="MathJax-Span-5"><span class="mi" id="MathJax-Span-6" style="font-family: MathJax_Math; font-style: italic;">n</span><span class="mo" id="MathJax-Span-7" style="font-family: MathJax_Main; padding-left: 0.278em;">=</span><span class="mn" id="MathJax-Span-8" style="font-family: MathJax_Main; padding-left: 0.278em;">500</span></span><span style="display: inline-block; width: 0px; height: 2.321em;"></span></span></span><span style="display: inline-block; overflow: hidden; vertical-align: -0.098em; border-left: 0px solid; width: 0px; height: 0.968em;"></span></span></nobr><span class="MJX_Assistive_MathML" role="presentation"><math xmlns="http://www.w3.org/1998/Math/MathML"><mi>n</mi><mo>=</mo><mn>500</mn></math></span></span><script type="math/tex" id="MathJax-Element-2">n=500</script></span> and <span class="math inline"><span class="MathJax_Preview" style="color: inherit; display: none;"></span><span class="MathJax" id="MathJax-Element-3-Frame" tabindex="0" style="position: relative;" data-mathml="&lt;math xmlns=&quot;http://www.w3.org/1998/Math/MathML&quot;&gt;&lt;mi&gt;p&lt;/mi&gt;&lt;mo&gt;=&lt;/mo&gt;&lt;mn&gt;200&lt;/mn&gt;&lt;/math&gt;" role="presentation"><nobr aria-hidden="true"><span class="math" id="MathJax-Span-9" style="width: 4.051em; display: inline-block;"><span style="display: inline-block; position: relative; width: 3.333em; height: 0px; font-size: 120%;"><span style="position: absolute; clip: rect(1.477em, 1003.29em, 2.694em, -1000em); top: -2.321em; left: 0em;"><span class="mrow" id="MathJax-Span-10"><span class="mi" id="MathJax-Span-11" style="font-family: MathJax_Math; font-style: italic;">p</span><span class="mo" id="MathJax-Span-12" style="font-family: MathJax_Main; padding-left: 0.278em;">=</span><span class="mn" id="MathJax-Span-13" style="font-family: MathJax_Main; padding-left: 0.278em;">200</span></span><span style="display: inline-block; width: 0px; height: 2.321em;"></span></span></span><span style="display: inline-block; overflow: hidden; vertical-align: -0.304em; border-left: 0px solid; width: 0px; height: 1.175em;"></span></span></nobr><span class="MJX_Assistive_MathML" role="presentation"><math xmlns="http://www.w3.org/1998/Math/MathML"><mi>p</mi><mo>=</mo><mn>200</mn></math></span></span><script type="math/tex" id="MathJax-Element-3">p=200</script></span>, with <span class="math inline"><span class="MathJax_Preview" style="color: inherit; display: none;"></span><span class="MathJax" id="MathJax-Element-4-Frame" tabindex="0" style="position: relative;" data-mathml="&lt;math xmlns=&quot;http://www.w3.org/1998/Math/MathML&quot;&gt;&lt;mi&gt;k&lt;/mi&gt;&lt;mo&gt;=&lt;/mo&gt;&lt;mn&gt;100&lt;/mn&gt;&lt;/math&gt;" role="presentation"><nobr aria-hidden="true"><span class="math" id="MathJax-Span-14" style="width: 4.051em; display: inline-block;"><span style="display: inline-block; position: relative; width: 3.333em; height: 0px; font-size: 120%;"><span style="position: absolute; clip: rect(1.449em, 1003.29em, 2.522em, -1000em); top: -2.321em; left: 0em;"><span class="mrow" id="MathJax-Span-15"><span class="mi" id="MathJax-Span-16" style="font-family: MathJax_Math; font-style: italic;">k</span><span class="mo" id="MathJax-Span-17" style="font-family: MathJax_Main; padding-left: 0.278em;">=</span><span class="mn" id="MathJax-Span-18" style="font-family: MathJax_Main; padding-left: 0.278em;">100</span></span><span style="display: inline-block; width: 0px; height: 2.321em;"></span></span></span><span style="display: inline-block; overflow: hidden; vertical-align: -0.098em; border-left: 0px solid; width: 0px; height: 1.002em;"></span></span></nobr><span class="MJX_Assistive_MathML" role="presentation"><math xmlns="http://www.w3.org/1998/Math/MathML"><mi>k</mi><mo>=</mo><mn>100</mn></math></span></span><script type="math/tex" id="MathJax-Element-4">k=100</script></span> non-zero coefficients:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb3-1" data-line-number="1">n =<span class="st"> </span><span class="dv">500</span></a>
+<a class="sourceLine" id="cb3-2" data-line-number="2">p =<span class="st"> </span><span class="dv">200</span></a>
+<a class="sourceLine" id="cb3-3" data-line-number="3">k =<span class="st"> </span><span class="dv">100</span></a>
+<a class="sourceLine" id="cb3-4" data-line-number="4">beta =<span class="st"> </span><span class="kw">rnorm</span>(p, <span class="dv">0</span>, <span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb3-5" data-line-number="5">beta[<span class="op">-</span>(<span class="dv">1</span><span class="op">:</span>k)] =<span class="st"> </span><span class="dv">0</span></a>
+<a class="sourceLine" id="cb3-6" data-line-number="6"></a>
+<a class="sourceLine" id="cb3-7" data-line-number="7">X =<span class="st"> </span><span class="kw">matrix</span>(<span class="kw">rnorm</span>(n <span class="op">*</span><span class="st"> </span>p, <span class="dv">0</span>, <span class="kw">sqrt</span>(<span class="dv">1</span> <span class="op">/</span><span class="st"> </span>k)), n, p)</a>
+<a class="sourceLine" id="cb3-8" data-line-number="8">y =<span class="st"> </span>X <span class="op">%*%</span><span class="st"> </span>beta <span class="op">+</span><span class="st"> </span><span class="kw">rnorm</span>(n, <span class="dv">0</span>, <span class="fl">0.5</span>)</a>
+<a class="sourceLine" id="cb3-9" data-line-number="9">y[y <span class="op">&gt;=</span><span class="st"> </span><span class="dv">0</span>] =<span class="st"> </span><span class="dv">2</span> <span class="op">*</span><span class="st"> </span><span class="kw">sqrt</span>(y[y <span class="op">&gt;=</span><span class="st"> </span><span class="dv">0</span>])</a>
+<a class="sourceLine" id="cb3-10" data-line-number="10">y[y <span class="op">&lt;</span><span class="st"> </span><span class="dv">0</span>] =<span class="st"> </span><span class="dv">-2</span> <span class="op">*</span><span class="st"> </span><span class="kw">sqrt</span>(<span class="op">-</span>y[y <span class="op">&lt;</span><span class="st"> </span><span class="dv">0</span>])</a></code></pre></div>
+<p>For such a data, even the <code>glmnet</code> with its state-of-art implementation needs some time to do the LOOCV:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb4-1" data-line-number="1">ptm =<span class="st"> </span><span class="kw">proc.time</span>()</a>
+<a class="sourceLine" id="cb4-2" data-line-number="2">CV_el =<span class="st"> </span><span class="kw">cv.glmnet</span>(X, y, <span class="dt">alpha =</span> <span class="fl">0.5</span>, <span class="dt">nfolds =</span> n, </a>
+<a class="sourceLine" id="cb4-3" data-line-number="3">                  <span class="dt">grouped =</span> F, <span class="dt">intercept =</span> T, <span class="dt">standardize =</span> T, <span class="dt">type.measure =</span> <span class="st">"mse"</span>)</a>
+<a class="sourceLine" id="cb4-4" data-line-number="4"><span class="kw">proc.time</span>() <span class="op">-</span><span class="st"> </span>ptm</a>
+<a class="sourceLine" id="cb4-5" data-line-number="5"><span class="co">#&gt;    user  system elapsed </span></a>
+<a class="sourceLine" id="cb4-6" data-line-number="6"><span class="co">#&gt;   13.25    0.40   13.07</span></a></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb5-1" data-line-number="1">ptm =<span class="st"> </span><span class="kw">proc.time</span>()</a>
+<a class="sourceLine" id="cb5-2" data-line-number="2">GLM_el =<span class="st"> </span><span class="kw">glmnet</span>(X, y, <span class="dt">lambda =</span> CV_el<span class="op">$</span>lambda, <span class="dt">alpha =</span> <span class="fl">0.5</span>, <span class="dt">intercept =</span> T, <span class="dt">standardize =</span> T)</a>
+<a class="sourceLine" id="cb5-3" data-line-number="3">ALO_el =<span class="st"> </span><span class="kw">glmnetALO</span>(X, y, GLM_el, <span class="fl">0.5</span>, <span class="dt">standardize =</span> T, <span class="dt">type.measure =</span> <span class="st">"mse"</span>)</a>
+<a class="sourceLine" id="cb5-4" data-line-number="4"><span class="kw">proc.time</span>() <span class="op">-</span><span class="st"> </span>ptm</a>
+<a class="sourceLine" id="cb5-5" data-line-number="5"><span class="co">#&gt;    user  system elapsed </span></a>
+<a class="sourceLine" id="cb5-6" data-line-number="6"><span class="co">#&gt;    0.34    0.10    0.17</span></a></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb6-1" data-line-number="1"><span class="kw">plot</span>(ALO_el)</a></code></pre></div>
+<p><img src="data:image/png;base64,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"><!-- --></p>
+</div>
+<div id="reference" class="section level2">
+<h2>Reference</h2>
+<p>K. Rahnama Rad, A. Maleki (2018). <a href="https://arxiv.org/abs/1801.10243"><em>A scalable estimate of the extra-sample prediction error via approximate leave-one-out</em></a>.</p>
+<p>S. Wang, W. Zhou, H. Lu, A. Maleki, and V. Mirrokni (2018). <a href="https://arxiv.org/abs/1807.02694"><em>Approximate Leave-One-Out Approximatet for Fast Parameter Tuning in High Dimensions</em></a>.</p>
+</div>
+
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+
+
+<div style="position: absolute; width: 0px; height: 0px; overflow: hidden; padding: 0px; border: 0px none; margin: 0px;"><div id="MathJax_Font_Test" style="position: absolute; visibility: hidden; top: 0px; left: 0px; width: auto; padding: 0px; border: 0px none; margin: 0px; white-space: nowrap; text-align: left; text-indent: 0px; text-transform: none; line-height: normal; letter-spacing: normal; word-spacing: normal; font-size: 40px; font-weight: normal; font-style: normal; font-size-adjust: none; font-family: MathJax_Main, sans-serif;"></div></div></body></html>
