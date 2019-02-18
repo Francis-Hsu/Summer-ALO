@@ -10,7 +10,10 @@
 \usepackage{lstautogobble}
 \usepackage[T1]{fontenc}
 \usepackage{newpxtext,newpxmath}
+\usepackage[style=alphabetic, backend=biber, autocite=inline]{biblatex}
 \usepackage[activate={true,nocompatibility},final,tracking=true, kerning=true, spacing=true, factor=1100, stretch=10, shrink=10]{microtype}
+
+\addbibresource{alo_svm.bib}
 
 \newcommand{\bu}{\bm{u}}
 \newcommand{\bx}{\bm{x}}
@@ -53,7 +56,7 @@
 
 \section{ALO with the Variational Problems}
 \subsection{\(C\)-Support Vector Classification}
-Let \(\bK\) denote the positive-definite kernel matrix (hence invertible), with \(\bK_{i,j}=K(\bx_i,\bx_j)\). By the Representer Theorem, the dual problem to kernel SVC can be expressed in ``loss \(+\) penalty'' form:
+Let \(\bK\) denote the positive-definite kernel matrix (hence invertible), with \(\bK_{i,j}=K(\bx_i,\bx_j)\). By the Representer Theorem, the dual problem to kernel SVC can be expressed in ``loss \(+\) penalty'' variational form:
 \begin{equation}
 \min_{\rho,\balpha}\sum_{j=1}^{n}\max\left[0, 1-y_jf(x_j)\right]+\frac{\lambda}{2}\balpha^\top\bK\balpha, \qquad f(x_j)=\bK_{\cdot,j}^\top\balpha+\rho.
 \end{equation}
@@ -63,93 +66,94 @@ For simplicity we ignore the offset \(\rho\) for now. Let \(S\) and \(V\) be the
 \end{dcases}\] and \[g_{\ell, S}=-y_S\odot\bm{1}\left\{y_S\bK_{\cdot,S}^\top\balpha<1\right\},\qquad g_{\ell, V}=\left(\bK_{\cdot,V}^\top\bK_{\cdot,V}\right)^{-1}\bK_{\cdot,V}^\top\left[\sum_{j\in S:y_j\bK_{\cdot,j}^\top\balpha<1}y_j\bK_{\cdot,j}-\lambda\bK\alpha\right].\]
 
 \subsection{\(\varepsilon\)-Support Vector Regression}
-For kernel SVR, the objective is 
+The \(\varepsilon\)-SVR is associated with the \(\varepsilon\)-insensitive loss function. Its objective function can be written as: 
 \begin{equation}
 \min_{\rho,\balpha}\sum_{j=1}^{n}\max\left[0, |y_j-f(x_j)|-\varepsilon\right]+\frac{\lambda}{2}\balpha^\top\bK\balpha, \qquad f(x_j)=\bK_{\cdot,j}^\top\balpha+\rho.
 \end{equation} 
-For the \(j\)-th observation, \(j\in S\), we now have \[\dot{\ell}(\bK_{\cdot,j}^\top\balpha)=-\sign\left(\bK_{\cdot,j}^\top\balpha\right)\cdot\bm{1}\left\{\left|y_j-\bK_{\cdot,j}^\top\balpha\right|\geq\varepsilon\right\},\qquad\ddot{\ell}(\bK_{\cdot,j}^\top\balpha)=0.\] Thus, our recipe will be exactly the same as in SVC except now \[g_{\ell, S}=-\sign\left(\bK_{\cdot,S}^\top\balpha\right)\odot\bm{1}\left\{\left|y_j-\bK_{\cdot,S}^\top\balpha\right|\geq\varepsilon\right\},\] and \[g_{\ell, V}=\left(\bK_{\cdot,V}^\top\bK_{\cdot,V}\right)^{-1}\bK_{\cdot,V}^\top\left[\lambda\bK\alpha-\sum_{j\in S:\left|y_j-\bK_{\cdot,j}^\top\balpha\right|\geq\varepsilon}\sign\left(\bK_{\cdot,j}^\top\balpha\right)\bK_{\cdot,j}\right].\]
+For the \(j\)-th observation, \(j\in S\), we now have \[\dot{\ell}(\bK_{\cdot,j}^\top\balpha)=-\sign\left(\bK_{\cdot,j}^\top\balpha\right)\cdot\bm{1}\left\{\left|y_j-\bK_{\cdot,j}^\top\balpha\right|\geq\varepsilon\right\},\qquad\ddot{\ell}(\bK_{\cdot,j}^\top\balpha)=0.\] Thus, our ALO recipe will be exactly the same as in \(C\)-SVC, except \[g_{\ell, S}=-\sign\left(\bK_{\cdot,S}^\top\balpha\right)\odot\bm{1}\left\{\left|y_j-\bK_{\cdot,S}^\top\balpha\right|\geq\varepsilon\right\},\] and \[g_{\ell, V}=\left(\bK_{\cdot,V}^\top\bK_{\cdot,V}\right)^{-1}\bK_{\cdot,V}^\top\left[\sum_{j\in S:\left|y_j-\bK_{\cdot,j}^\top\balpha\right|\geq\varepsilon}\sign\left(\bK_{\cdot,j}^\top\balpha\right)\bK_{\cdot,j}-\lambda\bK\alpha\right].\]
 
-\subsection{\(\nu\)-Support Vector Classification}
-This section is inaccurate for now.
+\subsection{\(\nu\)-SVC and \(\nu\)-SVR}
+\(\nu\)-SVC and \(\nu\)-SVR are introduced in \autocite{S2000}, with \(\nu\in(0, 1]\) a new parameter that can control the number of support vectors. Notably, \(\nu\) replaces \(C\) in \(C\)-SVC and \(\varepsilon\) in \(\varepsilon\)-SVR, and in latter case \(\varepsilon\) itself becomes an optimization argument.
 
-For \(\nu\)-SVC, \(\nu\in(0,1]\)
-\begin{equation}
-\min_{\rho,\balpha, b}\frac{1}{n\nu\rho}\sum_{j=1}^{n}\max\left[0, \rho-y_jf(x_j)\right]+\frac{1}{2\nu\rho}\balpha^\top\bK\balpha, \qquad f(x_j)=\bK_{\cdot,j}^\top\balpha+b.
-\end{equation}
-For the \(j\)-th observation, \(j\in S\), we have \[\dot{\ell}(\bK_{\cdot,j}^\top\balpha)=-\frac{y_j}{n\nu\rho}\cdot\bm{1}\{y_j\bK_{\cdot,j}^\top\balpha<\rho\},\qquad\ddot{\ell}(\bK_{\cdot,j}^\top\balpha)=0.\] Additionally, \[\nabla R(\balpha)=\frac{1}{\nu\rho}\bK\balpha,\qquad\nabla^2R(\balpha)=\frac{1}{\nu\rho}\bK.\] The ALO formula for \(\nu\)-SVC is then: \[\bK_{\cdot,i}^\top\tilde{\balpha}^{\setminus i}=\bK_{\cdot,i}^\top\hat{\balpha}+a_ig_{\ell,i},\] where \[a_i=\begin{dcases}
-\nu\rho\bK_{\cdot,i}^\top\left[\bK^{-1}-\bK^{-1}\bK_{\cdot,V}\left(\bK_{\cdot,V}^\top\bK^{-1}\bK_{\cdot,V}\right)^{-1}\bK_{\cdot,V}^\top\bK^{-1}\right]\bK_{\cdot,i} & i\in S,\\
-\left[\frac{1}{\nu\rho}\left(\bK_{\cdot,V}^\top\bK^{-1}\bK_{\cdot,V}\right)^{-1}_{ii}\right]^{-1} & i\in V,
-\end{dcases}\] and \[g_{\ell, S}=-\frac{1}{n\nu\rho}y_S\odot\bm{1}\left\{y_S\bK_{\cdot,S}^\top\balpha<\rho\right\},\qquad g_{\ell, V}=\frac{1}{\nu\rho}\left(\bK_{\cdot,V}^\top\bK_{\cdot,V}\right)^{-1}\bK_{\cdot,V}^\top\left[\frac{1}{n}\sum_{j\in S:y_j\bK_{\cdot,j}^\top\balpha<\rho}y_j\bK_{\cdot,j}-\bK\alpha\right].\] An issue with this implementation is that \(\rho\) will not be returned when solving the dual problem. Let \(T_+\) and \(T_-\) be the index sets of identical size \(s\) that correspond to \(y_i=\pm1\) s.t. \(0<\alpha_i<1\), respectively. Then one way to recover \(\rho\) is (Sch\"{o}lkopf \emph{et al.}, 2000): \[\rho=\frac{1}{2s}\left[\sum_{i\in T_+}\sum_{j=1}^n\alpha_jy_j\bK_{i,j}-\sum_{i\in T_-}\sum_{j=1}^n\alpha_jy_j\bK_{i,j}\right].\]
-\section{ALO with Approximate Explicit Feature Maps}
-In non-linear SVM, kernel trick is employed to avoid the explicit computation of feature maps, which sometime is impossible since the feature space can be infinite-dimensional. However, when sample size \(n\) is large, the kernel matrices become quite expensive to handle. Methods such as the Nystr\"{o}m approximation are used in order to retain the benefit of features mapping whilst retaining the speed of linear SVM. We may adopt a similar idea to help the ALO computation.
+Because of the following equivalencies, there is no need to figure out the variational problem in order to derive ALO for \(\nu\)-SVC and \(\nu\)-SVR:
+	\begin{itemize}
+	\item Let \(\alpha^\ast\) be the dual solution of \(\nu\)-SVC with parameters \((C,\nu)\), then \(\alpha^\ast/\rho^\ast\) is an optimal solution of \(C\)-SVC with \(C=1/(n\rho^\ast)\). See \autocite{CL2001}.
+	\item Let \(\alpha^\ast\) be the dual solution of \(\nu\)-SVR with parameters \((C,\nu)\), then \(\alpha^\ast\) is also the solution of \(\varepsilon\)-SVR with parameters \((C/n,\varepsilon^\ast)\). See \autocite{CL2002}.
+	\end{itemize}
+Here \(\rho^\ast\) and \(\varepsilon^\ast\) are the corresponding primal solutions, and can be worked out quickly from \(\alpha^\ast\) through equations derived from KKT condition. See \cite[Section~4.2]{CL2011}.
 
-Let \(\bX\) be the data matrix and \(\bK\) be the corresponding kernel matrix. An approximation \(\hat{\bPhi}\) to the feature maps \(\bPhi(\bX)\) can be constructed as following (procedure adopted from \verb|scikit-learn|):
-	\begin{enumerate}
-		\item Perform SVD: \(\bK=\bm{U}\bm{S}\bm{V}^\top\);
-		\item Clamp the singular values: \(\tilde{\bm{S}}=\max(\bm{S}, 10^{-12})\);
-		\item Construct the approximate map as \(\hat{\bPhi}=\bK\bm{U}\tilde{\bm{S}}^{-1/2}\bm{V}^\top\approx\bK^{1/2}\).
-	\end{enumerate}
-To compute ALO, we then simply replace the data matrix \(\bX\) with \(\hat{\bPhi}\) in the linear SVM formula.
+%\section{ALO with Approximate Explicit Feature Maps}
+%In non-linear SVM, kernel trick is employed to avoid the explicit computation of feature maps, which sometime is impossible since the feature space can be infinite-dimensional. However, when sample size \(n\) is large, the kernel matrices become quite expensive to handle. Methods such as the Nystr\"{o}m approximation are used in order to retain the benefit of features mapping whilst retaining the speed of linear SVM. We may adopt a similar idea to help the ALO computation.
+%
+%Let \(\bX\) be the data matrix and \(\bK\) be the corresponding kernel matrix. An approximation \(\hat{\bPhi}\) to the feature maps \(\bPhi(\bX)\) can be constructed as following (procedure adopted from \verb|scikit-learn|):
+%	\begin{enumerate}
+%		\item Perform SVD: \(\bK=\bm{U}\bm{S}\bm{V}^\top\);
+%		\item Clamp the singular values: \(\tilde{\bm{S}}=\max(\bm{S}, 10^{-12})\);
+%		\item Construct the approximate map as \(\hat{\bPhi}=\bK\bm{U}\tilde{\bm{S}}^{-1/2}\bm{V}^\top\approx\bK^{1/2}\).
+%	\end{enumerate}
+%To compute ALO, we then simply replace the data matrix \(\bX\) with \(\hat{\bPhi}\) in the linear SVM formula.
 
-\section{Numerical Experiment}
-We tested the two methods using simulated data. All model are fitted on the following grid of penalty: \(\lambda=\exp(-2:6:(1/3))\).
-\subsection{RBF}
-Both methods produce similar and satisfying result. Note that for \(p>n\) example the scale of \(Y\)-axis is relatively small, so the classification error is not really as bad as it looks.
-\begin{figure}[H]
-	\centering
-	\input{rbf_1_1.tex}
-	\caption{ALO and LOO comparison for SVM with RBF kernel. Direct method. \(n=300\), \(p=400\), \(\gamma=3/p\).}
-\end{figure}
-\begin{figure}[H]
-	\centering
-	\input{rbf_1_2.tex}
-	\caption{ALO and LOO comparison for SVM with RBF kernel. Feature map method. \(n=300\), \(p=400\), \(\gamma=3/p\).}
-\end{figure}
-\begin{figure}[H]
-	\centering
-	\input{rbf_2_1.tex}
-	\caption{ALO and LOO comparison for SVM with RBF kernel. Direct method. \(n=300\), \(p=50\), \(\gamma=2/p\).}
-\end{figure}
-\begin{figure}[H]
-	\centering
-	\input{rbf_2_2.tex}
-	\caption{ALO and LOO comparison for SVM with RBF kernel. Feature map method. \(n=300\), \(p=50\), \(\gamma=2/p\).}
-\end{figure}
+%\section{Numerical Experiments}
+%We tested the two methods using simulated data. All model are fitted on the following grid of penalty: \(\lambda=\exp(-2:6:(1/3))\).
+%\subsection{RBF}
+%Both methods produce similar and satisfying result. Note that for \(p>n\) example the scale of \(Y\)-axis is relatively small, so the classification error is not really as bad as it looks.
+%\begin{figure}[H]
+%	\centering
+%	\input{rbf_1_1.tex}
+%	\caption{ALO and LOO comparison for SVM with RBF kernel. Direct method. \(n=300\), \(p=400\), \(\gamma=3/p\).}
+%\end{figure}
+%\begin{figure}[H]
+%	\centering
+%	\input{rbf_1_2.tex}
+%	\caption{ALO and LOO comparison for SVM with RBF kernel. Feature map method. \(n=300\), \(p=400\), \(\gamma=3/p\).}
+%\end{figure}
+%\begin{figure}[H]
+%	\centering
+%	\input{rbf_2_1.tex}
+%	\caption{ALO and LOO comparison for SVM with RBF kernel. Direct method. \(n=300\), \(p=50\), \(\gamma=2/p\).}
+%\end{figure}
+%\begin{figure}[H]
+%	\centering
+%	\input{rbf_2_2.tex}
+%	\caption{ALO and LOO comparison for SVM with RBF kernel. Feature map method. \(n=300\), \(p=50\), \(\gamma=2/p\).}
+%\end{figure}
+%
+%\subsection{Polynomial}
+%Both methods again produce similar and satisfying result.
+%\begin{figure}[H]
+%	\centering
+%	\input{pol_1_1.tex}
+%	\caption{ALO and LOO comparison for SVM with polynomial kernel. Direct method. \(n=300\), \(p=50\), \(\gamma=3/p\), \(d=3\).}
+%\end{figure}
+%\begin{figure}[H]
+%	\centering
+%	\input{pol_1_2.tex}
+%	\caption{ALO and LOO comparison for SVM with RBF kernel. Feature map method. \(n=300\), \(p=50\), \(\gamma=3/p\), \(d=3\).}
+%\end{figure}
+%\begin{figure}[H]
+%	\centering
+%	\input{pol_2_1.tex}
+%	\caption{ALO and LOO comparison for SVM with polynomial kernel. Direct method. \(n=300\), \(p=50\), \(\gamma=2/p\), \(c_0=0.25\), \(d=5\).}
+%\end{figure}
+%\begin{figure}[H]
+%	\centering
+%	\input{pol_2_2.tex}
+%	\caption{ALO and LOO comparison for SVM with RBF kernel. Feature map method. \(n=300\), \(p=50\), \(\gamma=2/p\), \(c_0=0.25\), \(d=5\).}
+%\end{figure}
+%
+%\subsection{Sigmoid}
+%None of the methods works well with the sigmoid kernel, however. Note that it is not a positive-definite kernel.
+%
+%\begin{figure}[H]
+%	\centering
+%	\input{sig_1.tex}
+%	\caption{ALO and LOO comparison for SVM with sigmoid kernel. Direct method. \(n=300\), \(p=50\), \(\gamma=2/p\), \(c_0=0.3\).}
+%\end{figure}
+%\begin{figure}[H]
+%	\centering
+%	\input{sig_2.tex}
+%	\caption{ALO and LOO comparison for SVM with sigmoid kernel. Feature map method. \(n=300\), \(p=50\), \(\gamma=2/p\), \(c_0=0.3\).}
+%\end{figure}
 
-\subsection{Polynomial}
-Both methods again produce similar and satisfying result.
-\begin{figure}[H]
-	\centering
-	\input{pol_1_1.tex}
-	\caption{ALO and LOO comparison for SVM with polynomial kernel. Direct method. \(n=300\), \(p=50\), \(\gamma=3/p\), \(d=3\).}
-\end{figure}
-\begin{figure}[H]
-	\centering
-	\input{pol_1_2.tex}
-	\caption{ALO and LOO comparison for SVM with RBF kernel. Feature map method. \(n=300\), \(p=50\), \(\gamma=3/p\), \(d=3\).}
-\end{figure}
-\begin{figure}[H]
-	\centering
-	\input{pol_2_1.tex}
-	\caption{ALO and LOO comparison for SVM with polynomial kernel. Direct method. \(n=300\), \(p=50\), \(\gamma=2/p\), \(c_0=0.25\), \(d=5\).}
-\end{figure}
-\begin{figure}[H]
-	\centering
-	\input{pol_2_2.tex}
-	\caption{ALO and LOO comparison for SVM with RBF kernel. Feature map method. \(n=300\), \(p=50\), \(\gamma=2/p\), \(c_0=0.25\), \(d=5\).}
-\end{figure}
-
-\subsection{Sigmoid}
-None of the methods works well with the sigmoid kernel, however. Note that it is not a positive-definite kernel.
-
-\begin{figure}[H]
-	\centering
-	\input{sig_1.tex}
-	\caption{ALO and LOO comparison for SVM with sigmoid kernel. Direct method. \(n=300\), \(p=50\), \(\gamma=2/p\), \(c_0=0.3\).}
-\end{figure}
-\begin{figure}[H]
-	\centering
-	\input{sig_2.tex}
-	\caption{ALO and LOO comparison for SVM with sigmoid kernel. Feature map method. \(n=300\), \(p=50\), \(\gamma=2/p\), \(c_0=0.3\).}
-\end{figure}
+\printbibliography
 \end{document}
