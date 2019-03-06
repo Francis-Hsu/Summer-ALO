@@ -25,6 +25,9 @@
 \newcommand{\bI}{\bm{I}}
 \newcommand{\bJ}{\bm{J}}
 \newcommand{\bK}{\bm{K}}
+\newcommand{\bL}{\bm{L}}
+\newcommand{\bQ}{\bm{Q}}
+\newcommand{\bR}{\bm{R}}
 \newcommand{\bX}{\bm{X}}
 \newcommand{\bY}{\bm{Y}}
 \newcommand{\balpha}{\bm{\alpha}}
@@ -44,43 +47,61 @@
 \DeclareMathOperator{\prox}{prox}
 \DeclareMathOperator{\diag}{diag}
 \DeclareMathOperator{\bprox}{\mathbf{prox}}
+\DeclareMathOperator{\mode}{mode}
 \DeclareMathOperator*{\argmin}{arg\,min}
 
 \newcommand{\refthm}[2]{#1~#2}
 
 \title{Approximate Leave-One-Out with kernel SVM}
-\author{Peng Xu}
+\author{Wenda Zhou, Peng Xu}
 
 \begin{document}
 \maketitle
 
-\section{ALO with the Variational Problems}
-\subsection{\(C\)-Support Vector Classification}
-Let \(\bK\) denote the positive-definite kernel matrix (hence invertible), with \(\bK_{i,j}=K(\bx_i,\bx_j)\). By the Representer Theorem, the dual problem to kernel SVC can be expressed in ``loss \(+\) penalty'' variational form:
+\section{\(C\)-Support Vector Classification}
+Let \(\bK\) denote a positive-definite kernel matrix (hence invertible), with \(\bK_{i,j}=K(\bx_i,\bx_j)\). The objective of a kernel SVC can be expressed in the ``loss \(+\) penalty'' variational form:
 \begin{equation}
-\min_{\rho,\balpha}\sum_{j=1}^{n}\max\left[0, 1-y_jf(x_j)\right]+\frac{\lambda}{2}\balpha^\top\bK\balpha, \qquad f(x_j)=\bK_{\cdot,j}^\top\balpha+\rho.
+\min_{\rho,\balpha}\sum_{j=1}^{n}\max\left[0, 1-y_jh(x_j)\right]+\frac{\lambda}{2}\balpha^\top\bK\balpha, \qquad h(x_j)=\bK_{\cdot,j}^\top\balpha+\rho.
 \end{equation}
 For simplicity we ignore the offset \(\rho\) for now. Let \(S\) and \(V\) be the smooth set and the set of singularities, respectively. For the \(j\)-th observation, \(j\in S\), we have \[\dot{\ell}(\bK_{\cdot,j}^\top\balpha)=-y_j\cdot\bm{1}\{y_j\bK_{\cdot,j}^\top\balpha<1\},\qquad\ddot{\ell}(\bK_{\cdot,j}^\top\balpha)=0.\] Additionally, \[\nabla R(\balpha)=\lambda\bK\balpha,\qquad\nabla^2R(\balpha)=\lambda\bK.\] Substitute corresponding terms in \refthm{Thm.}{4.1}, we deduce the ALO formula for kernel SVC: \[\bK_{\cdot,i}^\top\tilde{\balpha}^{\setminus i}=\bK_{\cdot,i}^\top\hat{\balpha}+a_ig_{\ell,i},\] where \[a_i=\begin{dcases}
 \frac{1}{\lambda}\bK_{\cdot,i}^\top\left[\bK^{-1}-\bK^{-1}\bK_{\cdot,V}\left(\bK_{\cdot,V}^\top\bK^{-1}\bK_{\cdot,V}\right)^{-1}\bK_{\cdot,V}^\top\bK^{-1}\right]\bK_{\cdot,i} & i\in S,\\
 \left[\lambda\left(\bK_{\cdot,V}^\top\bK^{-1}\bK_{\cdot,V}\right)^{-1}_{ii}\right]^{-1} & i\in V,
 \end{dcases}\] and \[g_{\ell, S}=-y_S\odot\bm{1}\left\{y_S\bK_{\cdot,S}^\top\balpha<1\right\},\qquad g_{\ell, V}=\left(\bK_{\cdot,V}^\top\bK_{\cdot,V}\right)^{-1}\bK_{\cdot,V}^\top\left[\sum_{j\in S:y_j\bK_{\cdot,j}^\top\balpha<1}y_j\bK_{\cdot,j}-\lambda\bK\alpha\right].\]
 
-\subsection{\(\varepsilon\)-Support Vector Regression}
+\section{\(\varepsilon\)-Support Vector Regression}
 The \(\varepsilon\)-SVR is associated with the \(\varepsilon\)-insensitive loss function. Its objective function can be written as: 
 \begin{equation}
-\min_{\rho,\balpha}\sum_{j=1}^{n}\max\left[0, |y_j-f(x_j)|-\varepsilon\right]+\frac{\lambda}{2}\balpha^\top\bK\balpha, \qquad f(x_j)=\bK_{\cdot,j}^\top\balpha+\rho.
+\min_{\rho,\balpha}\sum_{j=1}^{n}\max\left[0, |y_j-h(x_j)|-\varepsilon\right]+\frac{\lambda}{2}\balpha^\top\bK\balpha, \qquad h(x_j)=\bK_{\cdot,j}^\top\balpha+\rho.
 \end{equation} 
-For the \(j\)-th observation, \(j\in S\), we now have \[\dot{\ell}(\bK_{\cdot,j}^\top\balpha)=-\sign\left(\bK_{\cdot,j}^\top\balpha\right)\cdot\bm{1}\left\{\left|y_j-\bK_{\cdot,j}^\top\balpha\right|\geq\varepsilon\right\},\qquad\ddot{\ell}(\bK_{\cdot,j}^\top\balpha)=0.\] Thus, our ALO recipe will be exactly the same as in \(C\)-SVC, except \[g_{\ell, S}=-\sign\left(\bK_{\cdot,S}^\top\balpha\right)\odot\bm{1}\left\{\left|y_j-\bK_{\cdot,S}^\top\balpha\right|\geq\varepsilon\right\},\] and \[g_{\ell, V}=\left(\bK_{\cdot,V}^\top\bK_{\cdot,V}\right)^{-1}\bK_{\cdot,V}^\top\left[\sum_{j\in S:\left|y_j-\bK_{\cdot,j}^\top\balpha\right|\geq\varepsilon}\sign\left(\bK_{\cdot,j}^\top\balpha\right)\bK_{\cdot,j}-\lambda\bK\alpha\right].\]
+So for the \(j\)-th observation, \(j\in S\), we have \[\dot{\ell}(\bK_{\cdot,j}^\top\balpha)=-\sign\left(\bK_{\cdot,j}^\top\balpha\right)\cdot\bm{1}\left\{\left|y_j-\bK_{\cdot,j}^\top\balpha\right|\geq\varepsilon\right\},\qquad\ddot{\ell}(\bK_{\cdot,j}^\top\balpha)=0.\] Our ALO recipe will then be exactly the same as in \(C\)-SVC, except \[g_{\ell, S}=-\sign\left(\bK_{\cdot,S}^\top\balpha\right)\odot\bm{1}\left\{\left|y_j-\bK_{\cdot,S}^\top\balpha\right|\geq\varepsilon\right\},\] and \[g_{\ell, V}=\left(\bK_{\cdot,V}^\top\bK_{\cdot,V}\right)^{-1}\bK_{\cdot,V}^\top\left[\sum_{j\in S:\left|y_j-\bK_{\cdot,j}^\top\balpha\right|\geq\varepsilon}\sign\left(\bK_{\cdot,j}^\top\balpha\right)\bK_{\cdot,j}-\lambda\bK\alpha\right].\]
 
-\subsection{\(\nu\)-SVC and \(\nu\)-SVR}
-\(\nu\)-SVC and \(\nu\)-SVR are introduced in \autocite{S2000}, with \(\nu\in(0, 1]\) a new parameter that can control the number of support vectors. Notably, \(\nu\) replaces \(C\) in \(C\)-SVC and \(\varepsilon\) in \(\varepsilon\)-SVR, and in latter case \(\varepsilon\) itself becomes an optimization argument.
+\section{\(\nu\)-SVC and \(\nu\)-SVR}
+\(\nu\)-SVC and \(\nu\)-SVR are introduced in \autocite{S2000}, with \(\nu\in(0, 1]\) a new parameter that can control the number of support vectors. Notably, \(\nu\) replaces \(C\) in \(C\)-SVC and \(\varepsilon\) in \(\varepsilon\)-SVR, and in the latter case \(\varepsilon\) itself becomes an optimization argument.
 
 Because of the following equivalencies, there is no need to figure out the variational problem in order to derive ALO for \(\nu\)-SVC and \(\nu\)-SVR:
 	\begin{itemize}
 	\item Let \(\alpha^\ast\) be the dual solution of \(\nu\)-SVC with parameters \((C,\nu)\), then \(\alpha^\ast/\rho^\ast\) is an optimal solution of \(C\)-SVC with \(C=1/(n\rho^\ast)\). See \autocite{CL2001}.
 	\item Let \(\alpha^\ast\) be the dual solution of \(\nu\)-SVR with parameters \((C,\nu)\), then \(\alpha^\ast\) is also the solution of \(\varepsilon\)-SVR with parameters \((C/n,\varepsilon^\ast)\). See \autocite{CL2002}.
 	\end{itemize}
-Here \(\rho^\ast\) and \(\varepsilon^\ast\) are the corresponding primal solutions, and can be worked out quickly from \(\alpha^\ast\) through equations derived from KKT condition. See \cite[Section~4.2]{CL2011}.
+Here \(\rho^\ast\) and \(\varepsilon^\ast\) are the corresponding primal solutions, and can be worked out quickly from \(\alpha^\ast\) through equations derived from KKT conditions. See \cite[Section~4.2]{CL2011}.
+
+\section{Multiclass-classifier}
+To handle the multinomial classification, LIBSVM adopts the one-versus-one strategy: for a dataset with \(y\in\mathcal{S}\), \(|\mathcal{S}|=K\), LIBSVM will train \(K(K-1)/2\) classifiers \(\hat{f}_{(u,v)}(\bx)\), one for each \(2\)-combination \((u,v)\) of \(\mathcal{S}\). The prediction for a new observation \(\bx_\text{new}\) is then obtained through voting: \(\hat{y}_\text{new}=\mode\{\hat{f}_{(u,v)}(\bx_\text{new})\}\), and the label with the lowest index will be chosen in case of ties.
+
+Note that for a specific pair \((u',v')\), the leave-\(i\)-out prediction \(f_{(u',v')}^{\setminus i}(\bx_j)\) is exactly the full-data prediction \(f_{(u',v')}(\bx_j)\) when \(y_i\) is neither \(u'\) nor \(v'\), for \(\bx_i\) does not contribute to the training of \(f_{(u',v')}(\cdot)\) in anyway. Therefore, to obtain the multiclass ALO prediction \(\tilde{y}_j^{\setminus i}\), we first construct all \(K(K-1)/2\) full-data predictions, then replace the \(K-1\) ones whose training are affected by \(y_i\) with the corresponding binary ALO predictions, and finally ensemble the result through popular voting.
+
+\section{Computation}
+To compute ALO for SVM, we must perform a variety of operations with the kernel matrix \(\bK\in\bbr^{n\times n}\). In practice \(n\) can often be quite large, therefore, na\"{i}vely implement the ALO formula will result in severe loss of efficiency. This issue can be, however, alleviated by exploiting the symmetry of \(\bK\): consider the Cholesky decomposition \(\bK=\bL\bL^\top\), then for an arbitrary index set \(E\subseteq\{1,\dotsc,n\}\), we have \[\bL^{-1}\bK_{\cdot,E}=\bL^{-1}\bL\bL^{\top}_{E,\cdot}=\bL^{\top}_{E,\cdot}.\] By further considering the thin QR factorization \(\bL^{\top}_{V,\cdot}=\bQ_V\bR_V\), where \(\bQ_V\) semi-orthogonal and \(\bR_V\) upper-triangular, we may expressed \(a_s\), \(s\in S\), as a difference of two quadratic form:
+	\begin{align*}
+	\lambda a_s&=\bK_{, s}^\top\bK^{-1}\bK_{, s}-\bK_{, s}^\top\bK^{-1}\bK_{\cdot,V}\left(\bK_{\cdot,V}^\top\bK^{-1}\bK_{\cdot,V}\right)^{-1}\bK_{\cdot,V}^\top\bK^{-1}\bK_{, s}\\
+	&=\bK_{, s}^\top(\bL\bL^\top)^{-1}\bK_{, s}-\bK_{, s}^\top(\bL\bL^\top)^{-1}\bK_{\cdot,V}\left(\bK_{\cdot,V}^\top(\bL\bL^\top)^{-1}\bK_{\cdot,V}\right)^{-1}\bK^\top_{\cdot,V}(\bL\bL^\top)^{-1}\bK_{, s}\\
+	&=(\bL^{-1}\bK_{, s})^\top\bL^{-1}\bK_{, s}-(\bL^{-1}\bK_{, s})^\top(\bL^{-1}\bK_{\cdot,V})\left[(\bL^{-1}\bK_{\cdot,V})^\top(\bL^{-1}\bK_{\cdot,V})\right]^{-1}(\bL^{-1}\bK_{\cdot,V})^\top(\bL^{-1}\bK_{, s})\\
+	&=\bL_{s,\cdot}\bL^{\top}_{s,\cdot}-\bL_{s,\cdot}\bL^{\top}_{V,\cdot}\left(\bL_{V,\cdot}\bL^{\top}_{V,\cdot}\right)^{-1}\bL_{V,\cdot}\bL^{\top}_{s,\cdot}\\
+	&=\bL_{s,\cdot}\bL^{\top}_{s,\cdot}-(\bQ_V^\top\bL_{s,\cdot})^\top(\bQ_V^\top\bL_{s,\cdot}).
+	\end{align*}
+Similarly, \(a_v\) with \(v\in V\) can be evaluated through the inner product of two vectors: \[(\lambda a_v)^{-1}=\left(\bL_{V,\cdot}\bL^{\top}_{V,\cdot}\right)^{-1}_{v,v}=\left(\bR_V^\top\bQ_V^\top\bQ_V\bR_V\right)^{-1}_{v,v}=\bR^{-1}_{v,\cdot}\bR^{-1}_{\cdot,v}.\]
+
+As a result, with \(\bL\), and thus \(\bL_{S,\cdot}\), \(\bL_{V,\cdot}\) computed beforehand, we avoided direct multiplication of large matrices and reduced computational costs.
 
 %\section{ALO with Approximate Explicit Feature Maps}
 %In non-linear SVM, kernel trick is employed to avoid the explicit computation of feature maps, which sometime is impossible since the feature space can be infinite-dimensional. However, when sample size \(n\) is large, the kernel matrices become quite expensive to handle. Methods such as the Nystr\"{o}m approximation are used in order to retain the benefit of features mapping whilst retaining the speed of linear SVM. We may adopt a similar idea to help the ALO computation.
