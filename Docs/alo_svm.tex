@@ -32,6 +32,7 @@
 \newcommand{\bY}{\bm{Y}}
 \newcommand{\balpha}{\bm{\alpha}}
 \newcommand{\bbeta}{\bm{\beta}}
+\newcommand{\bgamma}{\bm{\gamma}}
 \newcommand{\btheta}{\bm{\theta}}
 \newcommand{\bXb}{\bm{\mathcal{X}}}
 \newcommand{\bBb}{\bm{\mathcal{B}}}
@@ -59,21 +60,21 @@
 \maketitle
 
 \section{\(C\)-Support Vector Classification}
-Let \(\bK\) denote a positive-definite kernel matrix (hence invertible), with \(\bK_{i,j}=K(\bx_i,\bx_j)\). The objective of a kernel SVC can be expressed in the ``loss \(+\) penalty'' variational form:
+Let \(\bK\) denote a positive-definite kernel matrix (hence invertible), with \(\bK_{i,j}=K(\bx_i,\bx_j)\). The objective of a kernel SVC can be expressed in the ``loss \(+\) penalty'' variational form (notice the optimal \(\bgamma^\ast\) satisfies \(\bgamma^\ast=\by\odot\balpha\), with \(\balpha\) being the dual solution):
 \begin{equation}
-\min_{\rho,\balpha}\sum_{j=1}^{n}\max\left[0, 1-y_jh(x_j)\right]+\frac{\lambda}{2}\balpha^\top\bK\balpha, \qquad h(x_j)=\bK_{\cdot,j}^\top\balpha+\rho.
+\min_{\rho,\bgamma}\sum_{j=1}^{n}\max\left[0, 1-y_jh(x_j)\right]+\frac{\lambda}{2}\bgamma^\top\bK\bgamma, \qquad h(x_j)=\bK_{\cdot,j}^\top\bgamma+\rho.
 \end{equation}
-For simplicity we ignore the offset \(\rho\) for now. Let \(S\) and \(V\) be the smooth set and the set of singularities, respectively. For the \(j\)-th observation, \(j\in S\), we have \[\dot{\ell}(\bK_{\cdot,j}^\top\balpha)=-y_j\cdot\bm{1}\{y_j\bK_{\cdot,j}^\top\balpha<1\},\qquad\ddot{\ell}(\bK_{\cdot,j}^\top\balpha)=0.\] Additionally, \[\nabla R(\balpha)=\lambda\bK\balpha,\qquad\nabla^2R(\balpha)=\lambda\bK.\] Substitute corresponding terms in \refthm{Thm.}{4.1}, we deduce the ALO formula for kernel SVC: \[\bK_{\cdot,i}^\top\tilde{\balpha}^{\setminus i}=\bK_{\cdot,i}^\top\hat{\balpha}+a_ig_{\ell,i},\] where \[a_i=\begin{dcases}
+For simplicity we ignore the offset \(\rho\) for now. Let \(S\) and \(V\) be the smooth set and the set of singularities, respectively. For the \(j\)-th observation, \(j\in S\), we have \[\dot{\ell}(\bK_{\cdot,j}^\top\bgamma)=-y_j\cdot\bm{1}\{y_j\bK_{\cdot,j}^\top\bgamma<1\},\qquad\ddot{\ell}(\bK_{\cdot,j}^\top\bgamma)=0.\] Additionally, \[\nabla R(\bgamma)=\lambda\bK\bgamma,\qquad\nabla^2R(\bgamma)=\lambda\bK.\] Substitute corresponding terms in \refthm{Thm.}{4.1}, we deduce the ALO formula for kernel SVC: \[\bK_{\cdot,i}^\top\tilde{\bgamma}^{\setminus i}=\bK_{\cdot,i}^\top\hat{\bgamma}+a_ig_{\ell,i},\] where \[a_i=\begin{dcases}
 \frac{1}{\lambda}\bK_{\cdot,i}^\top\left[\bK^{-1}-\bK^{-1}\bK_{\cdot,V}\left(\bK_{\cdot,V}^\top\bK^{-1}\bK_{\cdot,V}\right)^{-1}\bK_{\cdot,V}^\top\bK^{-1}\right]\bK_{\cdot,i} & i\in S,\\
 \left[\lambda\left(\bK_{\cdot,V}^\top\bK^{-1}\bK_{\cdot,V}\right)^{-1}_{ii}\right]^{-1} & i\in V,
-\end{dcases}\] and \[g_{\ell, S}=-y_S\odot\bm{1}\left\{y_S\bK_{\cdot,S}^\top\balpha<1\right\},\qquad g_{\ell, V}=\left(\bK_{\cdot,V}^\top\bK_{\cdot,V}\right)^{-1}\bK_{\cdot,V}^\top\left[\sum_{j\in S:y_j\bK_{\cdot,j}^\top\balpha<1}y_j\bK_{\cdot,j}-\lambda\bK\alpha\right].\]
+\end{dcases}\] and \[g_{\ell, S}=-y_S\odot\bm{1}\left\{y_S\bK_{\cdot,S}^\top\bgamma<1\right\},\qquad g_{\ell, V}=\left(\bK_{\cdot,V}^\top\bK_{\cdot,V}\right)^{-1}\bK_{\cdot,V}^\top\left[\sum_{j\in S:y_j\bK_{\cdot,j}^\top\bgamma<1}y_j\bK_{\cdot,j}-\lambda\bK\alpha\right].\]
 
 \section{\(\varepsilon\)-Support Vector Regression}
-The \(\varepsilon\)-SVR is associated with the \(\varepsilon\)-insensitive loss function. Its objective function can be written as: 
+The \(\varepsilon\)-SVR is associated with the \(\varepsilon\)-insensitive loss function. Its objective function can be written as (notice the optimal \(\bgamma^\ast\) satisfies \(\bgamma^\ast=\balpha^\ast-\balpha\), where \(\balpha\) and \(\balpha^\ast\) are the dual solutions):
 \begin{equation}
-\min_{\rho,\balpha}\sum_{j=1}^{n}\max\left[0, |y_j-h(x_j)|-\varepsilon\right]+\frac{\lambda}{2}\balpha^\top\bK\balpha, \qquad h(x_j)=\bK_{\cdot,j}^\top\balpha+\rho.
+\min_{\rho,\bgamma}\sum_{j=1}^{n}\max\left[0, |y_j-h(x_j)|-\varepsilon\right]+\frac{\lambda}{2}\bgamma^\top\bK\bgamma, \qquad h(x_j)=\bK_{\cdot,j}^\top\bgamma+\rho.
 \end{equation} 
-So for the \(j\)-th observation, \(j\in S\), we have \[\dot{\ell}(\bK_{\cdot,j}^\top\balpha)=-\sign\left(\bK_{\cdot,j}^\top\balpha\right)\cdot\bm{1}\left\{\left|y_j-\bK_{\cdot,j}^\top\balpha\right|\geq\varepsilon\right\},\qquad\ddot{\ell}(\bK_{\cdot,j}^\top\balpha)=0.\] Our ALO recipe will then be exactly the same as in \(C\)-SVC, except \[g_{\ell, S}=-\sign\left(\bK_{\cdot,S}^\top\balpha\right)\odot\bm{1}\left\{\left|y_j-\bK_{\cdot,S}^\top\balpha\right|\geq\varepsilon\right\},\] and \[g_{\ell, V}=\left(\bK_{\cdot,V}^\top\bK_{\cdot,V}\right)^{-1}\bK_{\cdot,V}^\top\left[\sum_{j\in S:\left|y_j-\bK_{\cdot,j}^\top\balpha\right|\geq\varepsilon}\sign\left(\bK_{\cdot,j}^\top\balpha\right)\bK_{\cdot,j}-\lambda\bK\alpha\right].\]
+So for the \(j\)-th observation, \(j\in S\), we have \[\dot{\ell}(\bK_{\cdot,j}^\top\bgamma)=-\sign\left(\bK_{\cdot,j}^\top\bgamma\right)\cdot\bm{1}\left\{\left|y_j-\bK_{\cdot,j}^\top\bgamma\right|\geq\varepsilon\right\},\qquad\ddot{\ell}(\bK_{\cdot,j}^\top\bgamma)=0.\] Our ALO recipe will then be exactly the same as in \(C\)-SVC, except \[g_{\ell, S}=-\sign\left(\bK_{\cdot,S}^\top\bgamma\right)\odot\bm{1}\left\{\left|y_j-\bK_{\cdot,S}^\top\bgamma\right|\geq\varepsilon\right\},\] and \[g_{\ell, V}=\left(\bK_{\cdot,V}^\top\bK_{\cdot,V}\right)^{-1}\bK_{\cdot,V}^\top\left[\sum_{j\in S:\left|y_j-\bK_{\cdot,j}^\top\bgamma\right|\geq\varepsilon}\sign\left(\bK_{\cdot,j}^\top\bgamma\right)\bK_{\cdot,j}-\lambda\bK\alpha\right].\]
 
 \section{\(\nu\)-SVC and \(\nu\)-SVR}
 \(\nu\)-SVC and \(\nu\)-SVR are introduced in \autocite{S2000}, with \(\nu\in(0, 1]\) a new parameter that can control the number of support vectors. Notably, \(\nu\) replaces \(C\) in \(C\)-SVC and \(\varepsilon\) in \(\varepsilon\)-SVR, and in the latter case \(\varepsilon\) itself becomes an optimization argument.
@@ -91,7 +92,7 @@ To handle the multinomial classification, LIBSVM adopts the one-versus-one strat
 Note that for a specific pair \((u',v')\), the leave-\(i\)-out prediction \(f_{(u',v')}^{\setminus i}(\bx_j)\) is exactly the full-data prediction \(f_{(u',v')}(\bx_j)\) when \(y_i\) is neither \(u'\) nor \(v'\), for \(\bx_i\) does not contribute to the training of \(f_{(u',v')}(\cdot)\) in anyway. Therefore, to obtain the multiclass ALO prediction \(\tilde{y}_j^{\setminus i}\), we first construct all \(K(K-1)/2\) full-data predictions, then replace the \(K-1\) ones whose training are affected by \(y_i\) with the corresponding binary ALO predictions, and finally ensemble the result through popular voting.
 
 \section{Computation}
-To compute ALO for SVM, we must perform a variety of operations with the kernel matrix \(\bK\in\bbr^{n\times n}\). In practice \(n\) can often be quite large, therefore, na\"{i}vely implement the ALO formula will result in severe loss of efficiency. This issue can be, however, alleviated by exploiting the symmetry of \(\bK\): consider the Cholesky decomposition \(\bK=\bL\bL^\top\), then for an arbitrary index set \(E\subseteq\{1,\dotsc,n\}\), we have \[\bL^{-1}\bK_{\cdot,E}=\bL^{-1}\bL\bL^{\top}_{E,\cdot}=\bL^{\top}_{E,\cdot}.\] By further considering the thin QR factorization \(\bL^{\top}_{V,\cdot}=\bQ_V\bR_V\), where \(\bQ_V\) semi-orthogonal and \(\bR_V\) upper-triangular, we may expressed \(a_s\), \(s\in S\), as a difference of two quadratic form:
+To compute ALO for SVM, we must perform a variety of operations with the kernel matrix \(\bK\in\bbr^{n\times n}\). In practice \(n\) can often be quite large, therefore, na\"{i}vely implement the ALO formula will result in severe loss of efficiency. This issue can be, however, alleviated by exploiting the symmetry of \(\bK\): consider the Cholesky decomposition \(\bK=\bL\bL^\top\), then for an arbitrary index set \(E\subseteq\{1,\dotsc,n\}\), we have \[\bL^{-1}\bK_{\cdot,E}=\bL^{-1}\bL\bL^{\top}_{E,\cdot}=\bL^{\top}_{E,\cdot}.\] By further considering the thin QR factorization \(\bL^{\top}_{V,\cdot}=\bQ_V\bR_V\), where \(\bQ_V\) semi-orthogonal and \(\bR_V\) upper-triangular, we may expressed \(a_s\), \(s\in S\), as a difference between two quadratic forms:
 	\begin{align*}
 	\lambda a_s&=\bK_{, s}^\top\bK^{-1}\bK_{, s}-\bK_{, s}^\top\bK^{-1}\bK_{\cdot,V}\left(\bK_{\cdot,V}^\top\bK^{-1}\bK_{\cdot,V}\right)^{-1}\bK_{\cdot,V}^\top\bK^{-1}\bK_{, s}\\
 	&=\bK_{, s}^\top(\bL\bL^\top)^{-1}\bK_{, s}-\bK_{, s}^\top(\bL\bL^\top)^{-1}\bK_{\cdot,V}\left(\bK_{\cdot,V}^\top(\bL\bL^\top)^{-1}\bK_{\cdot,V}\right)^{-1}\bK^\top_{\cdot,V}(\bL\bL^\top)^{-1}\bK_{, s}\\
